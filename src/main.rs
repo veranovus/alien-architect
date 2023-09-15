@@ -27,36 +27,55 @@ fn main() {
             167.0 / 255.0,
         )))
         .add_systems(PreStartup, (setup_camera, setup_tiles))
+        .add_systems(Update, camera_movement)
         .run();
 }
 
 fn setup_tiles(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn(SpriteBundle {
-        // 60.0, 28.0 + 9.0
-        transform: Transform::from_xyz(60.0, 28.0 + 9.0, 0.0),
-        texture: asset_server.load("temp/tile.png"),
-        ..Default::default()
-    });
-    commands.spawn(SpriteBundle {
-        transform: Transform::from_xyz(30.0, 28.0 + 9.0, 0.0),
-        texture: asset_server.load("temp/tile.png"),
-        ..Default::default()
-    });
-    commands.spawn(SpriteBundle {
-        transform: Transform::from_xyz(0.0, 28.0 + 9.0, 0.0),
-        texture: asset_server.load("temp/tile.png"),
-        ..Default::default()
-    });
-    commands.spawn(SpriteBundle {
-        transform: Transform::from_xyz(0.0, 14.0 + 9.0, 0.0),
-        texture: asset_server.load("temp/tile.png"),
-        ..Default::default()
-    });
-    commands.spawn(SpriteBundle {
-        transform: Transform::from_xyz(0.0, 0.0 + 9.0, 0.0),
-        texture: asset_server.load("temp/tile.png"),
-        ..Default::default()
-    });
+    let lrow: usize = 5;
+    let lrow_cnt: usize = 6;
+
+    let srow: usize = 4;
+    let srow_cnt: usize = 6;
+
+    let row: usize = lrow + srow;
+
+    // Full width of the sprite
+    let fw = 30.0;
+    // Half width of the sprite
+    let hw = 15.0;
+
+    // Full height of the sprite
+    let fh = 18.0;
+    // Half height of the sprite
+    let hh = 9.0;
+    // Transfer height: Distance from the center of one tile
+    //                  to another tile in the same column.
+    let th = 14.0;
+
+    let totalw = hw + ((lrow - 1) as f32 * fw);
+    let totalh = fh + ((srow_cnt - 1) as f32 * th);
+
+    let total_tile = (lrow * lrow_cnt) + (srow * srow_cnt);
+
+    let handle = asset_server.load("temp/tile.png");
+
+    for i in 0..total_tile {
+        let xpos = (i % row) as f32 * hw;
+        let ypos = ((i / row) as f32 * th) + (((i % row) % 2) as f32 * hh);
+
+        println!("POS : ({}, {})", totalw - xpos, totalh - ypos);
+
+        if i < 3 {
+            continue;
+        }
+
+        commands.spawn(SpriteBundle {
+            transform: Transform::from_xyz(totalw - xpos, totalh - ypos, i as f32),
+            texture: handle.clone(),
+            ..Default::default()
+        });
+    }
 }
 
 fn setup_camera(mut commands: Commands) {
@@ -64,7 +83,47 @@ fn setup_camera(mut commands: Commands) {
 
     camera.projection.scale = 1.0 / global::window::SCALE_FACTOR as f32;
 
+    camera.transform.translation = Vec3::new(
+        global::window::VIEWPORT_RESOLUTION.0 as f32 / 2.0,
+        global::window::VIEWPORT_RESOLUTION.1 as f32 / 2.0,
+        0.0,
+    );
+
     commands.spawn(camera);
+}
+
+fn camera_movement(
+    mut query: Query<&mut Transform, With<Camera>>,
+    keyboard: Res<Input<KeyCode>>,
+    time: Res<Time>,
+) {
+    let speed = 15.0 * time.delta_seconds();
+
+    for mut transform in &mut query {
+        let mut moved = false;
+
+        if keyboard.pressed(KeyCode::A) {
+            transform.translation.x -= speed;
+            moved = true;
+        }
+        if keyboard.pressed(KeyCode::D) {
+            transform.translation.x += speed;
+            moved = true;
+        }
+
+        if keyboard.pressed(KeyCode::S) {
+            transform.translation.y -= speed;
+            moved = true;
+        }
+        if keyboard.pressed(KeyCode::W) {
+            transform.translation.y += speed;
+            moved = true;
+        }
+
+        if moved {
+            println!("TRANSFORM : {}", transform.translation);
+        }
+    }
 }
 
 /*
