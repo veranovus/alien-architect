@@ -1,4 +1,7 @@
+use bevy::core_pipeline::clear_color::ClearColorConfig;
+use bevy::input::keyboard::KeyboardInput;
 use bevy::prelude::*;
+use bevy::render::camera::{ScalingMode, Viewport};
 use bevy::window::WindowResolution;
 
 mod global;
@@ -25,5 +28,22 @@ fn main() {
                     ..Default::default()
                 }),
         )
+        .insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)))
+        .add_systems(PreStartup, (setup_camera, setup))
         .run();
+}
+
+fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn(SpriteBundle {
+        texture: asset_server.load("test-image.png"),
+        ..Default::default()
+    });
+}
+
+fn setup_camera(mut commands: Commands) {
+    let mut camera = Camera2dBundle::default();
+
+    camera.projection.scale = 1.0 / global::window::SCALE_FACTOR as f32;
+
+    commands.spawn(camera);
 }
