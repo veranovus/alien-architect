@@ -2,7 +2,7 @@
 
 Super cool puzzle games about managing space and aliens!
 
-> Version 0.1.0
+> Version 0.1.1
 
 ## Credits
 
@@ -12,3 +12,4 @@ Super cool puzzle games about managing space and aliens!
 ## Changelog
 
 - `v0.1.0`: Initial commit.
+- `v0.1.1`: Window creation.
