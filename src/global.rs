@@ -3,6 +3,9 @@
 pub mod window {
     use bevy::window::PresentMode;
 
+    // Resolution => (160 x 144)
+    //     Scaled => (800 x 720)
+
     pub const VIEWPORT_RESOLUTION: (usize, usize) = (160, 144);
     pub const SCALE_FACTOR: usize = 5;
     pub const RESOLUTION: (usize, usize) = (

@@ -1,13 +1,6 @@
-use bevy::core_pipeline::clear_color::ClearColorConfig;
-use bevy::input::keyboard::KeyboardInput;
 use bevy::prelude::*;
-use bevy::render::camera::{ScalingMode, Viewport};
-use bevy::window::WindowResolution;
 
 mod global;
-
-// Resolution => (160 x 144)
-//     Scaled => (800 x 720)
 
 fn main() {
     App::new()
@@ -16,7 +9,7 @@ fn main() {
                 .set(ImagePlugin::default_nearest())
                 .set(WindowPlugin {
                     primary_window: Some(Window {
-                        resolution: WindowResolution::new(
+                        resolution: bevy::window::WindowResolution::new(
                             global::window::RESOLUTION.0 as f32,
                             global::window::RESOLUTION.1 as f32,
                         ),
@@ -28,14 +21,40 @@ fn main() {
                     ..Default::default()
                 }),
         )
-        .insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)))
-        .add_systems(PreStartup, (setup_camera, setup))
+        .insert_resource(ClearColor(Color::rgb(
+            206.0 / 255.0,
+            192.0 / 255.0,
+            167.0 / 255.0,
+        )))
+        .add_systems(PreStartup, (setup_camera, setup_tiles))
         .run();
 }
 
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn setup_tiles(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(SpriteBundle {
-        texture: asset_server.load("test-image.png"),
+        // 60.0, 28.0 + 9.0
+        transform: Transform::from_xyz(60.0, 28.0 + 9.0, 0.0),
+        texture: asset_server.load("temp/tile.png"),
+        ..Default::default()
+    });
+    commands.spawn(SpriteBundle {
+        transform: Transform::from_xyz(30.0, 28.0 + 9.0, 0.0),
+        texture: asset_server.load("temp/tile.png"),
+        ..Default::default()
+    });
+    commands.spawn(SpriteBundle {
+        transform: Transform::from_xyz(0.0, 28.0 + 9.0, 0.0),
+        texture: asset_server.load("temp/tile.png"),
+        ..Default::default()
+    });
+    commands.spawn(SpriteBundle {
+        transform: Transform::from_xyz(0.0, 14.0 + 9.0, 0.0),
+        texture: asset_server.load("temp/tile.png"),
+        ..Default::default()
+    });
+    commands.spawn(SpriteBundle {
+        transform: Transform::from_xyz(0.0, 0.0 + 9.0, 0.0),
+        texture: asset_server.load("temp/tile.png"),
         ..Default::default()
     });
 }
@@ -47,3 +66,27 @@ fn setup_camera(mut commands: Commands) {
 
     commands.spawn(camera);
 }
+
+/*
+6x 5
+5x 4
+
+Total Tile: 60
+
+08 -- 06 -- 04 -- 02 -- 00
+-- 07 -- 05 -- 03 -- 01 --
+17 -- 15 -- 13 -- 11 -- 09
+-- 16 -- 14 -- 12 -- 10 --
+00 -- 00 -- 00 -- 00 -- 00
+-- 00 -- 00 -- 00 -- 00 --
+*/
+
+/*
+I  => Index
+HW => Half Width
+FH => Full Height
+HH => Half Height
+
+Rule -> (I % 9 * HW)
+Rule -> (I % 9 * FH) + (I % 9) % 2 == 1 => HH,
+*/
