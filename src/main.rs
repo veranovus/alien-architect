@@ -40,6 +40,8 @@ fn setup_tiles(mut commands: Commands, asset_server: Res<AssetServer>) {
 
     let row: usize = lrow + srow;
 
+    let total_tile = (lrow * lrow_cnt) + (srow * srow_cnt);
+
     // Full width of the sprite
     let fw = 30.0;
     // Half width of the sprite
@@ -53,25 +55,23 @@ fn setup_tiles(mut commands: Commands, asset_server: Res<AssetServer>) {
     //                  to another tile in the same column.
     let th = 14.0;
 
-    let totalw = hw + ((lrow - 1) as f32 * fw);
-    let totalh = fh + ((srow_cnt - 1) as f32 * th);
-
-    let total_tile = (lrow * lrow_cnt) + (srow * srow_cnt);
+    // Total size of the render area
+    let area = (
+        hw + ((lrow - 1) as f32 * fw),
+        fh + ((srow_cnt - 1) as f32 * th),
+    );
 
     let handle = asset_server.load("temp/tile.png");
 
     for i in 0..total_tile {
         let xpos = (i % row) as f32 * hw;
         let ypos = ((i / row) as f32 * th) + (((i % row) % 2) as f32 * hh);
+        let zpos = ((i / row) * 9) + ((i % row) / 2) + (((i % row) % 2) * 4);
 
-        println!("POS : ({}, {})", totalw - xpos, totalh - ypos);
-
-        if i < 3 {
-            continue;
-        }
+        println!("(INDEX, Z) : ({}, {})", i, zpos);
 
         commands.spawn(SpriteBundle {
-            transform: Transform::from_xyz(totalw - xpos, totalh - ypos, i as f32),
+            transform: Transform::from_xyz(area.0 - xpos, area.1 - ypos, zpos as f32),
             texture: handle.clone(),
             ..Default::default()
         });
@@ -138,6 +138,10 @@ Total Tile: 60
 -- 16 -- 14 -- 12 -- 10 --
 00 -- 00 -- 00 -- 00 -- 00
 -- 00 -- 00 -- 00 -- 00 --
+*/
+
+/*
+I / 2 + I % 2 * 4
 */
 
 /*
