@@ -1,6 +1,13 @@
 use bevy::prelude::*;
 
+/*
+- List for ordering of the entity sprites:
+    - Tile layer -> (0, 99)
+    - Entity Layer -> (100, 199)
+*/
+
 mod global;
+mod render;
 mod world;
 
 fn main() {
@@ -27,6 +34,7 @@ fn main() {
             192.0 / 255.0,
             167.0 / 255.0,
         )))
+        .add_plugins(world::WorldPlugin)
         .add_systems(PreStartup, (setup_camera, setup_tiles))
         .add_systems(Update, camera_movement)
         .run();
@@ -137,31 +145,3 @@ fn camera_movement(
         }
     }
 }
-
-/*
-6x 5
-5x 4
-
-Total Tile: 60
-
-08 -- 06 -- 04 -- 02 -- 00
--- 07 -- 05 -- 03 -- 01 --
-17 -- 15 -- 13 -- 11 -- 09
--- 16 -- 14 -- 12 -- 10 --
-00 -- 00 -- 00 -- 00 -- 00
--- 00 -- 00 -- 00 -- 00 --
-*/
-
-/*
-I / 2 + I % 2 * 4
-*/
-
-/*
-I  => Index
-HW => Half Width
-FH => Full Height
-HH => Half Height
-
-Rule -> (I % 9 * HW)
-Rule -> (I % 9 * FH) + (I % 9) % 2 == 1 => HH,
-*/
