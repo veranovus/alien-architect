@@ -1,4 +1,6 @@
 use crate::global;
+use crate::world::tile;
+use crate::world::tile::{Tile, TileMap};
 use bevy::prelude::*;
 
 pub struct MapPlugin;
@@ -6,6 +8,7 @@ pub struct MapPlugin;
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(PreStartup, setup_map);
+        app.add_systems(Startup, load_map);
     }
 }
 
@@ -102,6 +105,23 @@ fn setup_map(mut commands: Commands) {
 
     // Add Map as a resource
     commands.insert_resource(map);
+}
+
+fn load_map(mut commands: Commands, asset_server: Res<AssetServer>, map: Res<Map>) {
+    let mut tiles = vec![];
+
+    for origin in &map.origins {
+        tiles.push(Tile::new(
+            origin.world_position,
+            origin.grid_position,
+            origin.order,
+            true,
+            &mut commands,
+            &asset_server,
+        ));
+    }
+
+    TileMap::new(&tiles, &mut commands);
 }
 
 /************************************************************

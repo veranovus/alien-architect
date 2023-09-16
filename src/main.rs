@@ -34,8 +34,9 @@ fn main() {
             192.0 / 255.0,
             167.0 / 255.0,
         )))
+        .add_plugins(render::RenderPlugin)
         .add_plugins(world::WorldPlugin)
-        .add_systems(PreStartup, (setup_camera, setup_tiles))
+        .add_systems(PreStartup, setup_camera)
         .add_systems(Update, camera_movement)
         .run();
 }

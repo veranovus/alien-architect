@@ -57,5 +57,5 @@ fn setup_render_layer(mut query: Query<(&mut Transform, &RenderLayer), Added<Ren
 
 #[inline(always)]
 fn validate_render_layer_order(order: usize) -> bool {
-    return order < 0 || order > 99;
+    return !(order < 0 || order > 99);
 }
