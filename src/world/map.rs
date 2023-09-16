@@ -99,7 +99,10 @@ fn setup_map(mut commands: Commands) {
                 (offset.0 + area.0) - (xpos + hw),
                 (offset.1 + area.1) - (ypos + hh),
             ),
-            grid_position: IVec2::new(0, 0),
+            grid_position: IVec2::new(
+                (i % line) as i32,
+                ((i / line) * 2) as i32 + ((i % line) % 2) as i32,
+            ),
         });
     }
 
