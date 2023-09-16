@@ -9,7 +9,7 @@ pub struct MapPlugin;
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(PreStartup, setup_map);
-        app.add_systems(Startup, load_map);
+        app.add_systems(Startup, generate_map);
     }
 }
 
@@ -45,19 +45,81 @@ pub struct Map {
 }
 
 impl Map {
-    fn new(lrow: usize, srow: usize, row_count: usize) -> Self {
-        let mut map = Self {
-            lrow,
-            srow,
-            row_count,
+    pub fn new() -> Self {
+        return Self {
+            lrow: 0,
+            srow: 0,
+            row_count: 0,
             size: 0,
             grid: vec![],
             origins: vec![],
         };
+    }
 
-        map.size = (map.lrow * map.row_count) + (map.srow * map.row_count);
+    pub fn load(&mut self, path: &str) {
+        let mdesc: MapDesc = if let Ok(contents) = std::fs::read_to_string(path) {
+            ron::from_str(&contents).unwrap()
+        } else {
+            panic!("Failed to read map-file at `{}`.", path);
+        };
 
-        return map;
+        // Setup Map properties from MapDesc
+        self.lrow = mdesc.lrow;
+        self.srow = mdesc.srow;
+        self.row_count = mdesc.row_count;
+        self.size = (self.lrow * self.row_count) + (self.srow * self.row_count);
+
+        self.grid = mdesc.grid;
+
+        // Calculate Map origins
+        let line: usize = self.lrow + self.srow;
+
+        // Full width of the sprite
+        let fw = 30.0;
+        // Half width of the sprite
+        let hw = fw / 2.0;
+
+        // Full height of the sprite
+        let fh = 18.0;
+        // Half height of the sprite
+        let hh = fh / 2.0;
+        // Transfer height: Distance from the center of one tile
+        //                  to another tile in the same column.
+        let fth = 14.0;
+        // Half transfer height
+        let hth = fth / 2.0;
+
+        // Total size of the world area
+        let area = (
+            // Total width of the world tiles
+            self.lrow as f32 * fw,
+            // Total height for the world tiles
+            fh + ((self.row_count - 1) as f32 * fth) + hth,
+        );
+
+        let offset = (
+            (global::window::VIEWPORT_RESOLUTION.0 as f32 - area.0) / 2.0,
+            (global::window::VIEWPORT_RESOLUTION.1 as f32 - area.1) / 2.0,
+        );
+
+        for i in 0..self.size {
+            let xpos = (i % line) as f32 * hw;
+            let ypos = ((i / line) as f32 * fth) + (((i % line) % 2) as f32 * hth);
+            let zpos = ((i / line) * 9) + ((i % line) / 2) + (((i % line) % 2) * 4);
+
+            self.origins.push(MapPoint {
+                index: i,
+                order: zpos,
+                world_position: Vec2::new(
+                    (offset.0 + area.0) - (xpos + hw),
+                    (offset.1 + area.1) - (ypos + hh),
+                ),
+                grid_position: IVec2::new(
+                    (i % line) as i32,
+                    ((i / line) * 2) as i32 + ((i % line) % 2) as i32,
+                ),
+            });
+        }
     }
 }
 
@@ -66,70 +128,18 @@ impl Map {
  */
 
 fn setup_map(mut commands: Commands) {
-    let mut map = Map::new(5, 4, 6);
+    let mut map = Map::new();
 
-    let line: usize = map.lrow + map.srow;
+    map.load("assets/test-map.ron");
 
-    // Full width of the sprite
-    let fw = 30.0;
-    // Half width of the sprite
-    let hw = fw / 2.0;
-
-    // Full height of the sprite
-    let fh = 18.0;
-    // Half height of the sprite
-    let hh = fh / 2.0;
-    // Transfer height: Distance from the center of one tile
-    //                  to another tile in the same column.
-    let fth = 14.0;
-    // Half transfer height
-    let hth = fth / 2.0;
-
-    // Total size of the world area
-    let area = (
-        // Total width of the world tiles
-        map.lrow as f32 * fw,
-        // Total height for the world tiles
-        fh + ((map.row_count - 1) as f32 * fth) + hth,
-    );
-
-    let offset = (
-        (global::window::VIEWPORT_RESOLUTION.0 as f32 - area.0) / 2.0,
-        (global::window::VIEWPORT_RESOLUTION.1 as f32 - area.1) / 2.0,
-    );
-
-    for i in 0..map.size {
-        let xpos = (i % line) as f32 * hw;
-        let ypos = ((i / line) as f32 * fth) + (((i % line) % 2) as f32 * hth);
-        let zpos = ((i / line) * 9) + ((i % line) / 2) + (((i % line) % 2) * 4);
-
-        map.origins.push(MapPoint {
-            index: i,
-            order: zpos,
-            world_position: Vec2::new(
-                (offset.0 + area.0) - (xpos + hw),
-                (offset.1 + area.1) - (ypos + hh),
-            ),
-            grid_position: IVec2::new(
-                (i % line) as i32,
-                ((i / line) * 2) as i32 + ((i % line) % 2) as i32,
-            ),
-        });
-    }
-
-    // Add Map as a resource
     commands.insert_resource(map);
 }
 
-fn load_map(mut commands: Commands, mut map: ResMut<Map>, asset_server: Res<AssetServer>) {
-    let content = std::fs::read_to_string("assets/test-map.ron").unwrap();
-
-    let mdesc: MapDesc = ron::from_str(&content).unwrap();
-
+pub fn generate_map(mut commands: Commands, mut map: ResMut<Map>, asset_server: Res<AssetServer>) {
     let mut tiles = vec![];
 
     for (i, origin) in map.origins.iter().enumerate() {
-        if mdesc.grid[i] == 0 {
+        if map.grid[i] == 0 {
             continue;
         }
 
