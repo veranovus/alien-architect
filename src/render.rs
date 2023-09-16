@@ -47,8 +47,8 @@ impl RenderLayer {
  * - System Functions
  */
 
-fn setup_render_layer(mut query: Query<(&mut Transform, &RenderLayer), Added<RenderLayer>>) {
-    for (mut transform, layer) in &mut query {
+fn setup_render_layer(mut query: Query<(&RenderLayer, &mut Transform), Added<RenderLayer>>) {
+    for (layer, mut transform) in &mut query {
         let order = layer.get_render_order();
 
         transform.translation.z = order as f32;

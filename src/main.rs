@@ -31,7 +31,6 @@ fn main() {
         .add_plugins(render::RenderPlugin)
         .add_plugins(world::WorldPlugin)
         .add_systems(PreStartup, setup_camera)
-        .add_systems(Update, camera_movement)
         .run();
 }
 
@@ -47,38 +46,4 @@ fn setup_camera(mut commands: Commands) {
     );
 
     commands.spawn(camera);
-}
-
-fn camera_movement(
-    mut query: Query<&mut Transform, With<Camera>>,
-    keyboard: Res<Input<KeyCode>>,
-    time: Res<Time>,
-) {
-    let speed = 15.0 * time.delta_seconds();
-
-    for mut transform in &mut query {
-        let mut moved = false;
-
-        if keyboard.pressed(KeyCode::A) {
-            transform.translation.x -= speed;
-            moved = true;
-        }
-        if keyboard.pressed(KeyCode::D) {
-            transform.translation.x += speed;
-            moved = true;
-        }
-
-        if keyboard.pressed(KeyCode::S) {
-            transform.translation.y -= speed;
-            moved = true;
-        }
-        if keyboard.pressed(KeyCode::W) {
-            transform.translation.y += speed;
-            moved = true;
-        }
-
-        if moved {
-            println!("TRANSFORM : {}", transform.translation);
-        }
-    }
 }

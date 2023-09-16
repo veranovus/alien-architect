@@ -1,4 +1,5 @@
 use crate::render::RenderLayer;
+use crate::world::map::MapPoint;
 use bevy::prelude::*;
 
 /************************************************************
@@ -16,7 +17,9 @@ pub struct TileMap;
 
 impl TileMap {
     pub fn new(tiles: &Vec<Entity>, commands: &mut Commands) -> Entity {
-        let tilemap = commands.spawn((SpatialBundle::default(), TileMap)).id();
+        let tilemap = commands
+            .spawn((SpatialBundle::default(), TileMap, Name::new("Tile Map")))
+            .id();
 
         commands.entity(tilemap).push_children(tiles);
 
@@ -32,25 +35,28 @@ pub struct Tile {
 
 impl Tile {
     pub fn new(
-        posw: Vec2,
-        posg: IVec2,
-        order: usize,
         active: bool,
-        commands: &mut Commands,
+        origin: &MapPoint,
         asset_server: &Res<AssetServer>,
+        commands: &mut Commands,
     ) -> Entity {
         return commands
             .spawn((
                 SpriteBundle {
-                    transform: Transform::from_xyz(posw.x, posw.y, 0.0),
+                    transform: Transform::from_xyz(
+                        origin.world_position.x,
+                        origin.world_position.y,
+                        0.0,
+                    ),
                     texture: asset_server.load(TILE_TEXTURE_PATH),
                     ..Default::default()
                 },
                 Tile {
-                    position: posg,
+                    position: origin.grid_position,
                     active,
                 },
-                RenderLayer::Tile(order),
+                RenderLayer::Tile(origin.order),
+                Name::new(format!("Tile #{}", origin.index)),
             ))
             .id();
     }

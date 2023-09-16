@@ -111,14 +111,7 @@ fn load_map(mut commands: Commands, asset_server: Res<AssetServer>, map: Res<Map
     let mut tiles = vec![];
 
     for origin in &map.origins {
-        tiles.push(Tile::new(
-            origin.world_position,
-            origin.grid_position,
-            origin.order,
-            true,
-            &mut commands,
-            &asset_server,
-        ));
+        tiles.push(Tile::new(true, &origin, &asset_server, &mut commands));
     }
 
     TileMap::new(&tiles, &mut commands);
