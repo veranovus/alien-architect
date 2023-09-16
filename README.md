@@ -13,3 +13,4 @@ Super cool puzzle games about managing space and aliens!
 
 - `v0.1.0`: Initial commit.
 - `v0.1.1`: Window creation.
+- `v0.1.1`: Tile generation.
