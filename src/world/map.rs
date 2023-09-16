@@ -2,6 +2,7 @@ use crate::global;
 use crate::world::tile;
 use crate::world::tile::{Tile, TileMap};
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 
 pub struct MapPlugin;
 
@@ -15,6 +16,14 @@ impl Plugin for MapPlugin {
 /************************************************************
  * - Types
  */
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MapDesc {
+    lrow: usize,
+    srow: usize,
+    row_count: usize,
+    grid: Vec<usize>,
+}
 
 #[derive(Debug)]
 pub struct MapPoint {
@@ -31,6 +40,7 @@ pub struct Map {
     srow: usize,
     row_count: usize,
     pub size: usize,
+    pub grid: Vec<usize>,
     pub origins: Vec<MapPoint>,
 }
 
@@ -41,6 +51,7 @@ impl Map {
             srow,
             row_count,
             size: 0,
+            grid: vec![],
             origins: vec![],
         };
 
@@ -110,10 +121,18 @@ fn setup_map(mut commands: Commands) {
     commands.insert_resource(map);
 }
 
-fn load_map(mut commands: Commands, asset_server: Res<AssetServer>, map: Res<Map>) {
+fn load_map(mut commands: Commands, mut map: ResMut<Map>, asset_server: Res<AssetServer>) {
+    let content = std::fs::read_to_string("assets/test-map.ron").unwrap();
+
+    let mdesc: MapDesc = ron::from_str(&content).unwrap();
+
     let mut tiles = vec![];
 
-    for origin in &map.origins {
+    for (i, origin) in map.origins.iter().enumerate() {
+        if mdesc.grid[i] == 0 {
+            continue;
+        }
+
         tiles.push(Tile::new(true, &origin, &asset_server, &mut commands));
     }
 
