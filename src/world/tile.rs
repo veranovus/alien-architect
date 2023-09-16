@@ -16,7 +16,7 @@ pub struct TileMap;
 
 impl TileMap {
     pub fn new(tiles: &Vec<Entity>, commands: &mut Commands) -> Entity {
-        let tilemap = commands.spawn((TransformBundle::default(), TileMap)).id();
+        let tilemap = commands.spawn((SpatialBundle::default(), TileMap)).id();
 
         commands.entity(tilemap).push_children(tiles);
 

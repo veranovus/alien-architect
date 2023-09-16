@@ -22,20 +22,24 @@ impl RenderLayer {
     pub fn get_render_order(&self) -> usize {
         return match self {
             RenderLayer::Tile(order) => {
-                if !validate_render_layer_order(*order) {
-                    panic!("Invalid render order `{}` for `{:?}`.", *order, self);
-                }
+                self.validate_render_layer_order(*order);
 
                 *order
             }
             RenderLayer::Entity(order) => {
-                if !validate_render_layer_order(*order) {
-                    panic!("Invalid render order `{}` for `{:?}`.", *order, self);
-                }
+                self.validate_render_layer_order(*order);
 
                 100 + *order
             }
         };
+    }
+
+    #[inline(always)]
+    fn validate_render_layer_order(self, order: usize) {
+        if !(order > 99) {
+            return;
+        }
+        panic!("Invalid render order `{}` for `{:?}`.", order, self);
     }
 }
 
@@ -49,13 +53,4 @@ fn setup_render_layer(mut query: Query<(&mut Transform, &RenderLayer), Added<Ren
 
         transform.translation.z = order as f32;
     }
-}
-
-/************************************************************
- * - Helper Functions
- */
-
-#[inline(always)]
-fn validate_render_layer_order(order: usize) -> bool {
-    return !(order < 0 || order > 99);
 }
