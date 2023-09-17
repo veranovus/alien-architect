@@ -1,9 +1,10 @@
 use crate::global;
-use crate::world::tile;
+use crate::object::{Object, ObjectDesc, ObjectID};
 use crate::world::tile::{Tile, TileMap};
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 pub struct MapPlugin;
 
@@ -26,6 +27,7 @@ struct MapDesc {
     srow: usize,
     row_count: usize,
     grid: Vec<usize>,
+    objects: Vec<ObjectDesc>,
 }
 
 #[derive(Debug, Event)]
@@ -57,7 +59,7 @@ pub struct Map {
     row_count: usize,
     pub size: usize,
     pub grid: Vec<usize>,
-    pub origins: Vec<MapPoint>,
+    pub origins: HashMap<IVec2, MapPoint>,
 }
 
 impl Map {
@@ -68,7 +70,7 @@ impl Map {
             row_count: 0,
             size: 0,
             grid: vec![],
-            origins: vec![],
+            origins: HashMap::new(),
         };
     }
 
@@ -119,18 +121,23 @@ impl Map {
             let ypos = ((i / line) as f32 * fth) + (((i % line) % 2) as f32 * hth);
             let zpos = ((i / line) * 9) + ((i % line) / 2) + (((i % line) % 2) * 4);
 
-            self.origins.push(MapPoint {
-                index: i,
-                order: zpos,
-                world_position: Vec2::new(
-                    (offset.0 + area.0) - (xpos + hw),
-                    (offset.1 + area.1) - (ypos + hh),
-                ),
-                grid_position: IVec2::new(
-                    (i % line) as i32,
-                    ((i / line) * 2) as i32 + ((i % line) % 2) as i32,
-                ),
-            });
+            let key = IVec2::new(
+                (i % line) as i32,
+                ((i / line) * 2) as i32 + ((i % line) % 2) as i32,
+            );
+
+            self.origins.insert(
+                key,
+                MapPoint {
+                    index: i,
+                    order: zpos,
+                    world_position: Vec2::new(
+                        (offset.0 + area.0) - (xpos + hw),
+                        (offset.1 + area.1) - (ypos + hh),
+                    ),
+                    grid_position: key,
+                },
+            );
         }
     }
 }
@@ -153,7 +160,8 @@ pub fn handle_load_map_event(
     mut commands: Commands,
     mut events: EventReader<LoadMapEvent>,
     mut map: ResMut<Map>,
-    query: Query<Entity, With<tile::TileMap>>,
+    tilemap: Query<Entity, With<TileMap>>,
+    objects: Query<Entity, With<Object>>,
     asset_server: Res<AssetServer>,
 ) {
     if events.is_empty() {
@@ -170,10 +178,16 @@ pub fn handle_load_map_event(
     }
     events.clear();
 
-    match query.get_single() {
+    // De-spawn TileMap
+    match tilemap.get_single() {
         Ok(e) => commands.entity(e).despawn_recursive(),
         Err(QuerySingleError::MultipleEntities(e)) => panic!("{}", e),
         _ => {}
+    }
+
+    // De-spawn Objects
+    for e in &objects {
+        commands.entity(e).despawn_recursive();
     }
 
     let mdesc: MapDesc = if let Ok(contents) = std::fs::read_to_string(&path) {
@@ -184,15 +198,53 @@ pub fn handle_load_map_event(
 
     map.generate_origins(&mdesc);
 
+    generate_tiles(&map, &asset_server, &mut commands);
+
+    generate_objects(&map, &mdesc, &asset_server, &mut commands);
+}
+
+/************************************************************
+ * - Helper Functions
+ */
+
+fn generate_tiles(map: &Map, asset_server: &Res<AssetServer>, commands: &mut Commands) {
     let mut tiles = vec![];
-    for (i, origin) in map.origins.iter().enumerate() {
-        if map.grid[i] == 0 {
+    for (_, origin) in map.origins.iter() {
+        if map.grid[origin.index] == 0 {
             continue;
         }
-        tiles.push(Tile::new(true, &origin, &asset_server, &mut commands));
+        tiles.push(Tile::new(true, &origin, &asset_server, commands));
     }
 
-    TileMap::new(&tiles, &mut commands);
+    TileMap::new(&tiles, commands);
+}
+
+fn generate_objects(
+    map: &Map,
+    mdesc: &MapDesc,
+    asset_server: &Res<AssetServer>,
+    commands: &mut Commands,
+) {
+    for obj in &mdesc.objects {
+        let origin = if let Some(origin) = map.origins.get(&obj.position) {
+            origin
+        } else {
+            panic!(
+                "Failed to spawn Object::{}, origin doesn't exist for given position `{}`.",
+                obj.id.to_string(),
+                obj.position
+            );
+        };
+
+        Object::new(
+            obj.id,
+            origin.world_position,
+            obj.position,
+            origin.order,
+            asset_server,
+            commands,
+        );
+    }
 }
 
 /************************************************************

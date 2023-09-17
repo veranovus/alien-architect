@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 mod global;
+mod object;
 mod render;
 mod world;
 
