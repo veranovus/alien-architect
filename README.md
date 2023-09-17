@@ -17,3 +17,4 @@ Super cool puzzle games about managing space and aliens!
 - `v0.1.2`: Map abstraction.
 - `v0.1.2`: Tile abstraction.
 - `v0.1.2`: Refactored Tile generation.
+- `v0.1.3`: Implemented loading levels from file.

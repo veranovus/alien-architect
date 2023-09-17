@@ -8,8 +8,10 @@ pub struct MapPlugin;
 
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PreStartup, setup_map);
-        app.add_systems(Startup, generate_map);
+        app.add_event::<LoadMapEvent>()
+            .add_systems(PreStartup, setup_map)
+            .add_systems(PreUpdate, load_map)
+            .add_systems(Update, control_map);
     }
 }
 
@@ -18,11 +20,24 @@ impl Plugin for MapPlugin {
  */
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct MapDesc {
+struct MapDesc {
     lrow: usize,
     srow: usize,
     row_count: usize,
     grid: Vec<usize>,
+}
+
+#[derive(Debug, Event)]
+pub struct LoadMapEvent {
+    path: String,
+}
+
+impl LoadMapEvent {
+    pub fn new(path: &str) -> Self {
+        Self {
+            path: path.to_string(),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -56,20 +71,16 @@ impl Map {
         };
     }
 
-    pub fn load(&mut self, path: &str) {
-        let mdesc: MapDesc = if let Ok(contents) = std::fs::read_to_string(path) {
-            ron::from_str(&contents).unwrap()
-        } else {
-            panic!("Failed to read map-file at `{}`.", path);
-        };
-
+    pub fn generate_origins(&mut self, mdesc: &MapDesc) {
         // Setup Map properties from MapDesc
         self.lrow = mdesc.lrow;
         self.srow = mdesc.srow;
         self.row_count = mdesc.row_count;
         self.size = (self.lrow * self.row_count) + (self.srow * self.row_count);
 
-        self.grid = mdesc.grid;
+        // Prepare origins and grid
+        self.grid = mdesc.grid.clone();
+        self.origins.clear();
 
         // Calculate Map origins
         let line: usize = self.lrow + self.srow;
@@ -128,21 +139,51 @@ impl Map {
  */
 
 fn setup_map(mut commands: Commands) {
-    let mut map = Map::new();
-
-    map.load("assets/test-map.ron");
-
-    commands.insert_resource(map);
+    commands.insert_resource(Map::new());
 }
 
-pub fn generate_map(mut commands: Commands, mut map: ResMut<Map>, asset_server: Res<AssetServer>) {
-    let mut tiles = vec![];
+fn control_map(mut events: EventWriter<LoadMapEvent>, keyboard: Res<Input<KeyCode>>) {
+    if keyboard.just_released(KeyCode::R) {
+        events.send(LoadMapEvent::new("assets/test-level.ron"));
+    }
+}
 
+pub fn load_map(
+    mut commands: Commands,
+    mut events: EventReader<LoadMapEvent>,
+    mut map: ResMut<Map>,
+    query: Query<Entity, With<tile::TileMap>>,
+    asset_server: Res<AssetServer>,
+) {
+    if events.is_empty() {
+        return;
+    }
+    if events.len() > 1 {
+        panic!("Encountered multiple unhandled events for `LoadMapEvent`.");
+    }
+
+    for e in &query {
+        commands.entity(e).despawn_recursive();
+    }
+
+    let mut path = String::new();
+    for e in events.iter() {
+        path = e.path.clone();
+    }
+
+    let mdesc: MapDesc = if let Ok(contents) = std::fs::read_to_string(&path) {
+        ron::from_str(&contents).unwrap()
+    } else {
+        panic!("Failed to read level file at, `{}`.", path);
+    };
+
+    map.generate_origins(&mdesc);
+
+    let mut tiles = vec![];
     for (i, origin) in map.origins.iter().enumerate() {
         if map.grid[i] == 0 {
             continue;
         }
-
         tiles.push(Tile::new(true, &origin, &asset_server, &mut commands));
     }
 
