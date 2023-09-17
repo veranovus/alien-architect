@@ -40,11 +40,6 @@ impl Tile {
         asset_server: &Res<AssetServer>,
         commands: &mut Commands,
     ) -> Entity {
-        println!(
-            "(INDEX, GRIDP) : ( {}, ({}, {}) )",
-            origin.index, origin.grid_position.x, origin.grid_position.y
-        );
-
         return commands
             .spawn((
                 SpriteBundle {

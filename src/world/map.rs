@@ -1,6 +1,7 @@
 use crate::global;
 use crate::world::tile;
 use crate::world::tile::{Tile, TileMap};
+use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -10,7 +11,7 @@ impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<LoadMapEvent>()
             .add_systems(PreStartup, setup_map)
-            .add_systems(PreUpdate, load_map)
+            .add_systems(PostUpdate, handle_load_map_event)
             .add_systems(Update, control_map);
     }
 }
@@ -60,7 +61,7 @@ pub struct Map {
 }
 
 impl Map {
-    pub fn new() -> Self {
+    fn new() -> Self {
         return Self {
             lrow: 0,
             srow: 0,
@@ -71,7 +72,7 @@ impl Map {
         };
     }
 
-    pub fn generate_origins(&mut self, mdesc: &MapDesc) {
+    fn generate_origins(&mut self, mdesc: &MapDesc) {
         // Setup Map properties from MapDesc
         self.lrow = mdesc.lrow;
         self.srow = mdesc.srow;
@@ -148,7 +149,7 @@ fn control_map(mut events: EventWriter<LoadMapEvent>, keyboard: Res<Input<KeyCod
     }
 }
 
-pub fn load_map(
+pub fn handle_load_map_event(
     mut commands: Commands,
     mut events: EventReader<LoadMapEvent>,
     mut map: ResMut<Map>,
@@ -162,13 +163,17 @@ pub fn load_map(
         panic!("Encountered multiple unhandled events for `LoadMapEvent`.");
     }
 
-    for e in &query {
-        commands.entity(e).despawn_recursive();
-    }
-
     let mut path = String::new();
     for e in events.iter() {
         path = e.path.clone();
+        break;
+    }
+    events.clear();
+
+    match query.get_single() {
+        Ok(e) => commands.entity(e).despawn_recursive(),
+        Err(QuerySingleError::MultipleEntities(e)) => panic!("{}", e),
+        _ => {}
     }
 
     let mdesc: MapDesc = if let Ok(contents) = std::fs::read_to_string(&path) {
