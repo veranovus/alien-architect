@@ -1,5 +1,6 @@
 use crate::global;
-use crate::object::{Object, ObjectDesc, ObjectID};
+use crate::object::asset::ObjectAssetServer;
+use crate::object::{Object, ObjectDesc};
 use crate::world::tile::{Tile, TileMap};
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
@@ -163,6 +164,7 @@ pub fn handle_load_map_event(
     tilemap: Query<Entity, With<TileMap>>,
     objects: Query<Entity, With<Object>>,
     asset_server: Res<AssetServer>,
+    oas: Res<ObjectAssetServer>,
 ) {
     if events.is_empty() {
         return;
@@ -200,14 +202,14 @@ pub fn handle_load_map_event(
 
     generate_tiles(&map, &asset_server, &mut commands);
 
-    generate_objects(&map, &mdesc, &asset_server, &mut commands);
+    generate_objects(&map, &mdesc, &oas, &mut commands);
 }
 
 /************************************************************
  * - Helper Functions
  */
 
-fn generate_tiles(map: &Map, asset_server: &Res<AssetServer>, commands: &mut Commands) {
+fn generate_tiles(map: &Map, asset_server: &AssetServer, commands: &mut Commands) {
     let mut tiles = vec![];
     for (_, origin) in map.origins.iter() {
         if map.grid[origin.index] == 0 {
@@ -219,12 +221,7 @@ fn generate_tiles(map: &Map, asset_server: &Res<AssetServer>, commands: &mut Com
     TileMap::new(&tiles, commands);
 }
 
-fn generate_objects(
-    map: &Map,
-    mdesc: &MapDesc,
-    asset_server: &Res<AssetServer>,
-    commands: &mut Commands,
-) {
+fn generate_objects(map: &Map, mdesc: &MapDesc, oas: &ObjectAssetServer, commands: &mut Commands) {
     for obj in &mdesc.objects {
         let origin = if let Some(origin) = map.origins.get(&obj.position) {
             origin
@@ -241,7 +238,7 @@ fn generate_objects(
             origin.world_position,
             obj.position,
             origin.order,
-            asset_server,
+            oas,
             commands,
         );
     }

@@ -1,0 +1,6 @@
+AssetConf(
+    descs: [
+        (id: King, path: "temp/king.png", origin: (0, -0.25)),
+        (id: Mountain, path: "temp/mountain.png", origin: (0, -0.325)),
+    ]
+)

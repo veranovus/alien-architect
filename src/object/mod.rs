@@ -1,12 +1,16 @@
+use crate::object::asset::ObjectAssetServer;
 use crate::render::RenderLayer;
 use bevy::prelude::*;
+use bevy::sprite::Anchor;
 use serde::{Deserialize, Serialize};
+
+pub mod asset;
 
 pub struct ObjectPlugin;
 
 impl Plugin for ObjectPlugin {
     fn build(&self, app: &mut App) {
-        todo!()
+        app.add_plugins(asset::AssetPlugin);
     }
 }
 
@@ -21,7 +25,7 @@ pub struct ObjectDesc {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Copy, Component, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Component, Serialize, Deserialize)]
 pub enum ObjectID {
     // Entity IDs
     King,
@@ -62,24 +66,6 @@ impl ToString for ObjectID {
 }
 
 impl ObjectID {
-    fn get_texture_path(&self) -> &str {
-        return match self {
-            ObjectID::King => "temp/king.png",
-            ObjectID::Villager => "temp/villager.png",
-            ObjectID::Cow => "temp/cow.png",
-            ObjectID::Assassin => "temp/assassin.png",
-            ObjectID::Castle => "temp/castle.png",
-            ObjectID::Mountain => "temp/mountain.png",
-            ObjectID::Field => "temp/field.png",
-            ObjectID::House => "temp/house.png",
-            ObjectID::BigHouse => "temp/big-house.png",
-            ObjectID::Farm => "temp/farm.png",
-            ObjectID::Tower => "temp/tower.png",
-            ObjectID::Church => "temp/church.png",
-            ObjectID::Tavern => "temp/tavern.png",
-        };
-    }
-
     pub fn movable(&self) -> bool {
         return match self {
             ObjectID::Villager => true,
@@ -108,14 +94,20 @@ impl Object {
         position: Vec2,
         grid_position: IVec2,
         order: usize,
-        asset_server: &Res<AssetServer>,
+        oas: &ObjectAssetServer,
         commands: &mut Commands,
     ) -> Entity {
+        let asset = oas.get(id);
+
         return commands
             .spawn((
                 SpriteBundle {
                     transform: Transform::from_xyz(position.x, position.y, 0.0),
-                    texture: asset_server.load(id.get_texture_path()),
+                    texture: asset.handle.clone(),
+                    sprite: Sprite {
+                        anchor: Anchor::Custom(asset.origin),
+                        ..Default::default()
+                    },
                     ..Default::default()
                 },
                 Object {

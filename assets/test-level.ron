@@ -12,5 +12,6 @@ MapDesc(
     ],
     objects: [
         (id: Mountain, position: (2, 0)),
+        (id: King, position: (3, 1)),
     ],
 )

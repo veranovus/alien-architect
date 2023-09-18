@@ -18,3 +18,5 @@ Super cool puzzle games about managing space and aliens!
 - `v0.1.2`: Tile abstraction.
 - `v0.1.2`: Refactored Tile generation.
 - `v0.1.3`: Implemented loading levels from file.
+- `v0.1.4`: Implemented loading objects from file.
+- `v0.1.4`: Object asset loading is automatized and controlled via `asset-conf.ron`.

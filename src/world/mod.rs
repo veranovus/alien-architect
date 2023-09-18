@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-mod map;
+pub mod map;
 mod tile;
 
 pub struct WorldPlugin;

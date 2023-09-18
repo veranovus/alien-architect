@@ -37,7 +37,7 @@ impl Tile {
     pub fn new(
         active: bool,
         origin: &MapPoint,
-        asset_server: &Res<AssetServer>,
+        asset_server: &AssetServer,
         commands: &mut Commands,
     ) -> Entity {
         return commands

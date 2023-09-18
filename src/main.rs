@@ -31,6 +31,7 @@ fn main() {
         )))
         .add_plugins(render::RenderPlugin)
         .add_plugins(world::WorldPlugin)
+        .add_plugins(object::ObjectPlugin)
         .add_systems(PreStartup, setup_camera)
         .run();
 }
