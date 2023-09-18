@@ -1,6 +1,17 @@
 AssetConf(
     descs: [
-        (id: King, path: "temp/king.png", origin: (0, -0.25)),
-        (id: Mountain, path: "temp/mountain.png", origin: (0, -0.325)),
+        (id: King, path: "temp/king.png", origin: (0.0, -0.25)),
+        (id: Villager, path: "temp/village.png", origin: (0.0, 0.0)),
+        (id: Cow, path: "temp/cow.png", origin: (0.0, 0.0)),
+        (id: Assassin, path: "temp/assassin.png", origin: (0.0, 0.0)),
+        (id: Castle, path: "temp/castle.png", origin: (0.0, 0.0)),
+        (id: Mountain, path: "temp/mountain.png", origin: (0.0, -0.325)),
+        (id: Field, path: "temp/field.png", origin: (0.0, 0.0)),
+        (id: House, path: "temp/house.png", origin: (0.0, 0.0)),
+        (id: BigHouse, path: "temp/big-house.png", origin: (0.0, 0.0)),
+        (id: Farm, path: "temp/farm.png", origin: (0.0, 0.0)),
+        (id: Tower, path: "temp/tower.png", origin: (0.0, 0.0)),
+        (id: Church, path: "temp/church.png", origin: (0.0, 0.0)),
+        (id: Tavern, path: "temp/tavern.png", origin: (0.0, 0.0)),
     ]
 )
