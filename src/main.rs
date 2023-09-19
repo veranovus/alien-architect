@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 mod global;
 mod object;
+mod player;
 mod render;
 mod world;
 

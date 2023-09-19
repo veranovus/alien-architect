@@ -1,6 +1,7 @@
 use crate::global;
 use crate::object::asset::ObjectAssetServer;
 use crate::object::{Object, ObjectDesc};
+use crate::player::UFO;
 use crate::world::tile::{Tile, TileMap};
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
@@ -163,6 +164,7 @@ pub fn handle_load_map_event(
     mut map: ResMut<Map>,
     tilemap: Query<Entity, With<TileMap>>,
     objects: Query<Entity, With<Object>>,
+    ufo: Query<Entity, With<UFO>>,
     asset_server: Res<AssetServer>,
     oas: Res<ObjectAssetServer>,
 ) {
@@ -183,7 +185,16 @@ pub fn handle_load_map_event(
     // De-spawn TileMap
     match tilemap.get_single() {
         Ok(e) => commands.entity(e).despawn_recursive(),
-        Err(QuerySingleError::MultipleEntities(e)) => panic!("{}", e),
+        Err(QuerySingleError::MultipleEntities(e)) => {
+            panic!("Encountered multiple TileMaps, {}.", e)
+        }
+        _ => {}
+    }
+
+    // De-spawn UFO
+    match ufo.get_single() {
+        Ok(e) => commands.entity(e).despawn_recursive(),
+        Err(QuerySingleError::MultipleEntities(e)) => panic!("Encountered multiple UFOs, {}.", e),
         _ => {}
     }
 
@@ -203,6 +214,8 @@ pub fn handle_load_map_event(
     generate_tiles(&map, &asset_server, &mut commands);
 
     generate_objects(&map, &mdesc, &oas, &mut commands);
+
+    generate_ufo(&map, &asset_server, &mut commands);
 }
 
 /************************************************************
@@ -242,6 +255,17 @@ fn generate_objects(map: &Map, mdesc: &MapDesc, oas: &ObjectAssetServer, command
             commands,
         );
     }
+}
+
+fn generate_ufo(map: &Map, asset_server: &AssetServer, commands: &mut Commands) {
+    let map_point = map.origins.get(&IVec2::new(2, 0)).unwrap();
+
+    UFO::new(
+        map_point.world_position,
+        map_point.grid_position,
+        asset_server,
+        commands,
+    );
 }
 
 /************************************************************
