@@ -20,3 +20,4 @@ Super cool puzzle games about managing space and aliens!
 - `v0.1.3`: Implemented loading levels from file.
 - `v0.1.4`: Implemented loading objects from file.
 - `v0.1.4`: Object asset loading is automatized and controlled via `asset-conf.ron`.
+- `v0.1.5`: Refactored Grid, and switched from Map to World.
