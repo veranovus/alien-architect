@@ -2,7 +2,7 @@
 
 Super cool puzzle games about managing space and aliens!
 
-> Version 0.1.5
+> Version 0.1.6
 
 ## Credits
 
