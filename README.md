@@ -2,7 +2,7 @@
 
 Super cool puzzle games about managing space and aliens!
 
-> Version 0.1.6
+> Version 0.1.7
 
 ## Credits
 
@@ -23,3 +23,4 @@ Super cool puzzle games about managing space and aliens!
 - `v0.1.4`: Object asset loading is automatized and controlled via `asset-conf.ron`.
 - `v0.1.5`: Refactored Grid, and switched from Map to World.
 - `v0.1.6`: Refactored loading levels.
+- `v0.1.7`: Camera module.
