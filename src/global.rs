@@ -12,7 +12,7 @@ pub mod window {
         VIEWPORT_RESOLUTION.0 * SCALE_FACTOR,
         VIEWPORT_RESOLUTION.1 * SCALE_FACTOR,
     );
-    pub const TITLE: &str = "GBJam #11";
+    pub const TITLE: &str = "Alien Architect";
     pub const PRESENT_MODE: PresentMode = PresentMode::Fifo;
     pub const RESIZABLE: bool = false;
 }
