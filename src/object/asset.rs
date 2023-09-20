@@ -1,6 +1,5 @@
 use crate::object::ObjectID;
 use bevy::prelude::*;
-use bevy::render::render_resource::Texture;
 use bevy::utils::HashMap;
 use serde::{Deserialize, Serialize};
 
@@ -16,35 +15,11 @@ impl Plugin for AssetPlugin {
  * - Constants
  */
 
-const ASSET_CONFIG_PATH: &str = "assets/objects/asset-conf.ron";
+const OBJECT_CONFIG_PATH: &str = "assets/object-conf.ron";
 
 /************************************************************
  * - Types
  */
-
-#[derive(Debug, Serialize, Deserialize)]
-struct AssetDesc {
-    id: ObjectID,
-    path: String,
-    origin: Vec2,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct AssetConf {
-    descs: Vec<AssetDesc>,
-}
-
-#[derive(Debug)]
-pub struct ObjectAsset {
-    pub handle: Handle<Image>,
-    pub origin: Vec2,
-}
-
-impl ObjectAsset {
-    fn new(handle: Handle<Image>, origin: Vec2) -> Self {
-        Self { handle, origin }
-    }
-}
 
 #[derive(Debug, Resource)]
 pub struct ObjectAssetServer {

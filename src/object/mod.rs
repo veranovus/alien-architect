@@ -1,5 +1,6 @@
 use crate::object::asset::ObjectAssetServer;
 use crate::render::RenderLayer;
+use crate::world::grid::Grid;
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
 use serde::{Deserialize, Serialize};
@@ -44,65 +45,30 @@ pub enum ObjectID {
     Tavern,
 }
 
-impl ToString for ObjectID {
-    fn to_string(&self) -> String {
-        return match self {
-            ObjectID::King => "King",
-            ObjectID::Villager => "Villager",
-            ObjectID::Cow => "Cow",
-            ObjectID::Assassin => "Assassin",
-            ObjectID::Castle => "Castle",
-            ObjectID::Mountain => "Mountain",
-            ObjectID::Field => "Field",
-            ObjectID::House => "House",
-            ObjectID::BigHouse => "BigHouse",
-            ObjectID::Farm => "Farm",
-            ObjectID::Tower => "Tower",
-            ObjectID::Church => "Church",
-            ObjectID::Tavern => "Tavern",
-        }
-        .to_string();
-    }
-}
-
-impl ObjectID {
-    pub fn movable(&self) -> bool {
-        return match self {
-            ObjectID::Villager => true,
-            ObjectID::Cow => true,
-            ObjectID::House => true,
-            ObjectID::BigHouse => true,
-            ObjectID::Farm => true,
-            ObjectID::Tower => true,
-            ObjectID::Church => true,
-            ObjectID::Tavern => true,
-            _ => false,
-        };
-    }
-}
-
 #[derive(Debug, Component)]
 pub struct Object {
     pub id: ObjectID,
-    pub grid_position: IVec2,
+    pub name: String,
+    pub position: UVec2,
     pub movable: bool,
 }
 
 impl Object {
     pub fn new(
         id: ObjectID,
-        position: Vec2,
-        grid_position: IVec2,
-        order: usize,
+        position: UVec2,
+        grid: &Grid,
         oas: &ObjectAssetServer,
         commands: &mut Commands,
     ) -> Entity {
         let asset = oas.get(id);
 
+        let world_position = grid.cell_to_world(position) + grid.cell_center_offset();
+
         return commands
             .spawn((
                 SpriteBundle {
-                    transform: Transform::from_xyz(position.x, position.y, 0.0),
+                    transform: Transform::from_xyz(world_position.x, world_position.y, 0.0),
                     texture: asset.handle.clone(),
                     sprite: Sprite {
                         anchor: Anchor::Custom(asset.origin),
@@ -112,11 +78,12 @@ impl Object {
                 },
                 Object {
                     id,
-                    grid_position,
+                    name: asset.name,
+                    position,
                     movable: id.movable(),
                 },
-                RenderLayer::Entity(order),
-                Name::new(id.to_string()),
+                RenderLayer::Entity(grid.cell_order(position) as usize),
+                Name::new(asset.name),
             ))
             .id();
     }

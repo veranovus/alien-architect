@@ -114,7 +114,7 @@ impl Tile {
                     state: TileState::Default,
                     r#type: TileType::from(position.y % 2),
                 },
-                RenderLayer::Tile(grid.cell_order(index) as usize),
+                RenderLayer::Tile(grid.cell_order(position) as usize),
                 Name::new(format!("Tile #{}", index)),
             ))
             .id();

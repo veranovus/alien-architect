@@ -38,9 +38,11 @@ impl Grid {
         }
     }
 
-    pub fn cell_order(&self, index: usize) -> u32 {
+    pub fn cell_order(&self, pos: UVec2) -> u32 {
+        let index = (pos.y * self.size.0) + pos.x;
+
         return (self.size.0 * self.size.1)
-            - (index as u32 % self.size.0 + (index as u32 / self.size.0 * self.size.0));
+            - (index % self.size.0 + (index / self.size.0 * self.size.0));
     }
 
     pub fn cell_to_world(&self, pos: UVec2) -> Vec2 {
