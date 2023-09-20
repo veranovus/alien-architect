@@ -94,13 +94,7 @@ pub struct Tile {
 }
 
 impl Tile {
-    pub fn new(
-        index: usize,
-        position: UVec2,
-        grid: &Grid,
-        asset_server: &AssetServer,
-        commands: &mut Commands,
-    ) -> Entity {
+    pub fn new(index: usize, position: UVec2, grid: &Grid, commands: &mut Commands) -> Entity {
         let world_position = grid.cell_to_world(position);
 
         return commands

@@ -1,5 +1,6 @@
 use crate::object::ObjectID;
 use crate::world::grid::{Grid, GridPlugin};
+use crate::world::level::LevelPlugin;
 use crate::world::tile::{TileMap, TilePlugin};
 use bevy::prelude::*;
 
@@ -13,6 +14,7 @@ impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(GridPlugin)
             .add_plugins(TilePlugin)
+            .add_plugins(LevelPlugin)
             .add_systems(Startup, setup_world);
     }
 }
@@ -48,7 +50,7 @@ fn setup_world(mut commands: Commands, grid: Res<Grid>) {
  * - Helper Functions
  */
 
-pub fn generate_tiles(grid: &Grid, asset_server: &AssetServer, commands: &mut Commands) {
+pub fn generate_tiles(grid: &Grid, commands: &mut Commands) {
     let cc = grid.size.0 * grid.size.1;
 
     let mut tiles = vec![];
@@ -61,7 +63,6 @@ pub fn generate_tiles(grid: &Grid, asset_server: &AssetServer, commands: &mut Co
             i as usize, //
             UVec2::new(x, y),
             grid,
-            asset_server,
             commands,
         );
 

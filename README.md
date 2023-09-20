@@ -1,4 +1,4 @@
-# GB Jam #11
+# Alien Architect - GB Jam #11
 
 Super cool puzzle games about managing space and aliens!
 
@@ -8,6 +8,7 @@ Super cool puzzle games about managing space and aliens!
 
 - Programming : `veranovus`
 - Art & Game Design : `st_levi`
+- SFX & Music: `danielsbk`
 
 ## Changelog
 
@@ -21,3 +22,4 @@ Super cool puzzle games about managing space and aliens!
 - `v0.1.4`: Implemented loading objects from file.
 - `v0.1.4`: Object asset loading is automatized and controlled via `asset-conf.ron`.
 - `v0.1.5`: Refactored Grid, and switched from Map to World.
+- `v0.1.6`: Refactored loading levels.
