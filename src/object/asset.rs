@@ -16,7 +16,7 @@ impl Plugin for AssetPlugin {
  * - Constants
  */
 
-const ASSET_CONFIG_PATH: &str = "assets/temp/asset-conf.ron";
+const ASSET_CONFIG_PATH: &str = "assets/objects/asset-conf.ron";
 
 /************************************************************
  * - Types
