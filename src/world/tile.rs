@@ -1,12 +1,15 @@
 use crate::render::RenderLayer;
-use crate::world::map::MapPoint;
+use crate::world::grid::Grid;
 use bevy::prelude::*;
+use bevy::sprite::Anchor;
 
-/************************************************************
- * - Constants
- */
+pub struct TilePlugin;
 
-const TILE_TEXTURE_PATH: &str = "temp/tile.png";
+impl Plugin for TilePlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(PostUpdate, setup_tile);
+    }
+}
 
 /************************************************************
  * - Types
@@ -35,29 +38,52 @@ pub struct Tile {
 
 impl Tile {
     pub fn new(
-        active: bool,
-        origin: &MapPoint,
+        index: usize,
+        position: UVec2,
+        grid: &Grid,
         asset_server: &AssetServer,
         commands: &mut Commands,
     ) -> Entity {
+        let world_position = grid.cell_to_world(position);
+
+        let tile_path = if position.y % 2 != 0 {
+            "tiles/tile_0.png"
+        } else {
+            "tiles/tile_1.png"
+        };
+
         return commands
             .spawn((
                 SpriteBundle {
-                    transform: Transform::from_xyz(
-                        origin.world_position.x,
-                        origin.world_position.y,
-                        0.0,
-                    ),
-                    texture: asset_server.load(TILE_TEXTURE_PATH),
+                    sprite: Sprite {
+                        anchor: Anchor::BottomLeft,
+                        ..Default::default()
+                    },
+                    transform: Transform::from_xyz(world_position.x, world_position.y, 0.0),
+                    texture: asset_server.load(tile_path),
                     ..Default::default()
                 },
                 Tile {
-                    position: origin.grid_position,
-                    active,
+                    position: IVec2::new(position.x as i32, position.y as i32),
+                    active: grid.grid[index] != 0,
                 },
-                RenderLayer::Tile(origin.order),
-                Name::new(format!("Tile #{}", origin.index)),
+                RenderLayer::Tile(grid.cell_order(index) as usize),
+                Name::new(format!("Tile #{}", index)),
             ))
             .id();
+    }
+}
+
+/************************************************************
+ * - Types
+ */
+
+fn setup_tile(mut query: Query<(&Tile, &mut Visibility), Added<Tile>>) {
+    for (tile, mut visibility) in &mut query {
+        if tile.active {
+            *visibility = Visibility::Visible;
+        } else {
+            *visibility = Visibility::Hidden;
+        }
     }
 }

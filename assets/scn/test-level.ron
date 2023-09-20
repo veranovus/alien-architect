@@ -1,0 +1,6 @@
+LevelDesc(
+    objects: [
+        (id: Mountain, position: (4, 8)),
+        (id: King, position: (4, 7)),
+    ],
+)

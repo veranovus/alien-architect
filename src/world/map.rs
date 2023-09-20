@@ -8,6 +8,8 @@ use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+/*
+
 pub struct MapPlugin;
 
 impl Plugin for MapPlugin {
@@ -293,4 +295,6 @@ fn generate_ufo(map: &Map, asset_server: &AssetServer, commands: &mut Commands) 
  * Rule -> (I % 9 * HW)
  * Rule -> (I % 9 * FH) + (I % 9) % 2 == 1 => HH,
  *
+ */
+
  */

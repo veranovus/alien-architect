@@ -34,8 +34,13 @@ impl Grid {
             cell_size,
             cell_offset,
             size,
-            grid: Vec::new(),
+            grid: vec![1; (size.0 * size.1) as usize],
         }
+    }
+
+    pub fn cell_order(&self, index: usize) -> u32 {
+        return (self.size.0 * self.size.1)
+            - (index as u32 % self.size.0 + (index as u32 / self.size.0 * self.size.0));
     }
 
     pub fn cell_to_world(&self, pos: UVec2) -> Vec2 {
@@ -59,7 +64,15 @@ impl Grid {
  */
 
 fn setup_grid(mut commands: Commands) {
-    commands.insert_resource(Grid::new(GRID_SIZE, CELL_SIZE, CELL_OFFSET));
+    let mut g = Grid::new(GRID_SIZE, CELL_SIZE, CELL_OFFSET);
+
+    for i in 0..g.grid.len() {
+        if (((i / g.size.0 as usize) % 2) == 0) && (i % g.size.0 as usize == 0) {
+            g.grid[i] = 0;
+        }
+    }
+
+    commands.insert_resource(g);
 }
 
 /************************************************************
