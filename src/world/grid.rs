@@ -38,11 +38,18 @@ impl Grid {
         }
     }
 
-    pub fn grid_to_world(&self, pos: UVec2) -> Vec2 {
+    pub fn cell_to_world(&self, pos: UVec2) -> Vec2 {
         return Vec2::new(
             (pos.x * (self.cell_size.0 - self.cell_offset.0)) as f32
                 + ((pos.y % 2) * ((self.cell_size.0 - self.cell_offset.0) / 2)) as f32,
             (pos.y * ((self.cell_size.1 - self.cell_offset.1) / 2)) as f32,
+        );
+    }
+
+    pub fn cell_center_offset(&self) -> Vec2 {
+        return Vec2::new(
+            (self.cell_offset.0 + ((self.cell_size.0 - self.cell_offset.1) / 2)) as f32,
+            (self.cell_offset.1 + ((self.cell_size.1 - self.cell_offset.1) / 2)) as f32,
         );
     }
 }
@@ -62,4 +69,7 @@ fn setup_grid(mut commands: Commands) {
  *
  * X => (i / W) + (i % H)
  * Y => (i / W)
+ *
+ * Tiles -> cell_to_world
+ * Objects -> cell_to_world + cell_offset
  */

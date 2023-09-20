@@ -23,21 +23,10 @@ fn generate_tiles(mut commands: Commands, grid: Res<Grid>, asset_server: Res<Ass
         let x = i % grid.size.0;
         let y = i / grid.size.0;
 
-        let v = grid.grid_to_world(UVec2::new(x, y));
+        let v = grid.cell_to_world(UVec2::new(x, y));
         let order = cc - (i % grid.size.0 + (i / grid.size.0 * grid.size.0));
 
-        println!("(WP, ZP) : ({}, {})", v, order);
-
         commands.spawn(SpriteBundle {
-            /*
-            sprite: Sprite {
-                anchor: Anchor::Custom(Vec2::new(
-                    0.0,
-                    grid.cell_offset.1 as f32 / (grid.size.1 + grid.cell_offset.1) as f32,
-                )),
-                ..Default::default()
-            },
-             */
             sprite: Sprite {
                 anchor: Anchor::BottomLeft,
                 ..Default::default()
