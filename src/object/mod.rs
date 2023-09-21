@@ -1,6 +1,7 @@
 use crate::object::asset::ObjectAssetServer;
+use crate::player::UFOLiftEvent;
 use crate::render::RenderLayer;
-use crate::world::grid::Grid;
+use crate::world::{grid::Grid, World};
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
 use serde::{Deserialize, Serialize};
@@ -34,6 +35,7 @@ pub struct ObjectDesc {
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Component, Serialize, Deserialize)]
 pub enum ObjectID {
+    None,
     // Entity IDs
     King,
     Villager,
@@ -60,11 +62,12 @@ impl fmt::Display for ObjectID {
 #[derive(Debug, Event)]
 pub struct ObjectSelectEvent {
     position: IVec2,
+    callback: bool,
 }
 
 impl ObjectSelectEvent {
-    pub fn new(position: IVec2) -> Self {
-        Self { position }
+    pub fn new(position: IVec2, callback: bool) -> Self {
+        Self { position, callback }
     }
 }
 
@@ -93,7 +96,7 @@ pub struct Object {
     pub id: ObjectID,
     pub name: String,
     pub occupied: Vec<IVec2>,
-    offset: IVec2,
+    pub offset: IVec2,
 }
 
 impl Object {
@@ -159,15 +162,20 @@ impl Object {
  */
 
 fn handle_select_object_event(
+    mut event_writer: EventWriter<UFOLiftEvent>,
     mut event_reader: EventReader<ObjectSelectEvent>,
-    mut query: Query<(&Object, &mut Selectable)>,
+    mut query: Query<(Entity, &Object, &mut Selectable)>,
 ) {
     for e in event_reader.iter() {
         let mut selected = false;
 
-        for (obj, mut selectable) in &mut query {
+        for (entity, obj, mut selectable) in &mut query {
             if obj.occupied.contains(&e.position) && !selected {
                 selectable.selected = true;
+
+                if e.callback {
+                    event_writer.send(UFOLiftEvent::new(obj.id, entity, obj.occupied[0]));
+                }
 
                 selected = true;
                 continue;
@@ -189,6 +197,72 @@ fn update_object_image(
             *handle = oas.get(obj.id).assets[0].clone();
         }
     }
+}
+
+/************************************************************
+ * - Helper Functions
+ */
+
+pub fn find_valid_cells(id: ObjectID, position: IVec2, world: &World, grid: &Grid) -> Vec<IVec2> {
+    return match id {
+        ObjectID::Villager => {
+            vec![]
+        }
+        ObjectID::Cow => {
+            vec![]
+        }
+        ObjectID::House => {
+            let even = position.y % 2 == 0;
+
+            // TODO: Just add else's x value 1.
+            let adjecteds: Vec<(i32, i32)> = vec![
+                (0, 0), //
+                (0, 2),
+                (0, -2),
+                (1, 0),
+                (-1, 0),
+                if even { (0, 1) } else { (1, 1) },
+                if even { (0, -1) } else { (1, -1) },
+                if even { (-1, 1) } else { (0, 1) },
+                if even { (-1, -1) } else { (0, -1) },
+            ];
+
+            let mut valid = vec![];
+            for (x, y) in adjecteds {
+                let new = IVec2::new(position.x + x, position.y + y);
+                println!("TARGET: {}", new);
+
+                if (new.x < 0 || new.x >= grid.size.0 as i32)
+                    || (new.y < 0 || new.y >= grid.size.1 as i32)
+                {
+                    continue;
+                }
+                if grid.grid[((new.y * grid.size.0 as i32) + new.x) as usize] == 0 {
+                    continue;
+                }
+
+                valid.push(new);
+            }
+
+            valid
+        }
+        ObjectID::BigHouse => {
+            vec![]
+        }
+        ObjectID::Farm => {
+            vec![]
+        }
+        ObjectID::Tower => {
+            vec![]
+        }
+        ObjectID::Church => {
+            vec![]
+        }
+        ObjectID::Tavern => {
+            vec![]
+        }
+        _ => panic!("Can't find valid cells for immobile {}.", id.to_string()),
+    };
 }
 
 /************************************************************

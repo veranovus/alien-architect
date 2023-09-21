@@ -1,6 +1,7 @@
-use crate::object::ObjectSelectEvent;
-use crate::world::grid::Grid;
+use crate::object::asset::ObjectAssetServer;
+use crate::object::{find_valid_cells, Object, ObjectID, ObjectSelectEvent, Selectable};
 use crate::world::tile::{TileState, TileStateChangeEvent};
+use crate::world::{grid::Grid, World};
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
@@ -9,7 +10,10 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, control_ufo);
+        app.add_event::<UFODropEvent>()
+            .add_event::<UFOLiftEvent>()
+            .add_systems(Update, control_ufo)
+            .add_systems(PostUpdate, (handle_ufo_lift_event, handle_ufo_drop_event));
     }
 }
 
@@ -19,17 +23,52 @@ impl Plugin for PlayerPlugin {
 
 const UFO_TEXUTRE_PATH: &str = "ufo.png";
 
-const UFO_SPRITE_OFFSET: (i32, i32) = (5, 4 + 23);
+const UFO_SPRITE_OFFSET: (i32, i32) = (5, 4 + 26);
+
+const UFO_LIFT_MODIFIER: i32 = 8;
 
 /************************************************************
  * - Types
  */
 
+#[derive(Debug, Event)]
+pub struct UFODropEvent {
+    entity: Entity,
+    position: IVec2,
+}
+
+impl UFODropEvent {
+    pub fn new(entity: Entity, position: IVec2) -> Self {
+        Self { entity, position }
+    }
+}
+
+#[derive(Debug, Event)]
+pub struct UFOLiftEvent {
+    id: ObjectID,
+    entity: Entity,
+    position: IVec2,
+}
+
+impl UFOLiftEvent {
+    pub fn new(id: ObjectID, entity: Entity, position: IVec2) -> Self {
+        Self {
+            id,
+            entity,
+            position,
+        }
+    }
+}
+
 #[derive(Debug, Component)]
 pub struct UFO {
-    position: IVec2,
+    pub position: IVec2,
+    pub offset: IVec2,
     selected: bool,
-    offset: IVec2,
+    selected_id: ObjectID,
+    selected_entity: Entity,
+    selected_difference: IVec2,
+    selected_valid_cells: Vec<IVec2>,
 }
 
 impl UFO {
@@ -62,8 +101,12 @@ impl UFO {
                 },
                 UFO {
                     position,
-                    selected: false,
                     offset: IVec2::new(UFO_SPRITE_OFFSET.0, UFO_SPRITE_OFFSET.1),
+                    selected: false,
+                    selected_id: ObjectID::None,
+                    selected_entity: Entity::PLACEHOLDER,
+                    selected_difference: IVec2::ZERO,
+                    selected_valid_cells: vec![],
                 },
                 Name::new("UFO"),
             ))
@@ -76,13 +119,19 @@ impl UFO {
  */
 
 fn control_ufo(
-    mut query: Query<(&mut UFO, &mut Transform)>,
+    mut drop_event_writer: EventWriter<UFODropEvent>,
     mut tile_event_writer: EventWriter<TileStateChangeEvent>,
     mut objc_event_writer: EventWriter<ObjectSelectEvent>,
-    grid: Res<Grid>,
+    mut ufo_query: Query<(&mut UFO, &mut Transform)>,
+    mut obj_query: Query<
+        (Entity, &Object, &mut Transform),
+        (With<Object>, With<Selectable>, Without<UFO>),
+    >,
+    mut grid: Res<Grid>,
+    oas: Res<ObjectAssetServer>,
     keyboard: Res<Input<KeyCode>>,
 ) {
-    let (mut ufo, mut transform) = match query.get_single_mut() {
+    let (mut ufo, mut transform) = match ufo_query.get_single_mut() {
         Ok(tuple) => tuple,
         Err(QuerySingleError::MultipleEntities(_)) => {
             panic!("Multiple UFOs are present in the scene.")
@@ -91,6 +140,7 @@ fn control_ufo(
     };
 
     let even = ufo.position.y % 2 == 0;
+    let mut lift = false;
     let mut moved = false;
     let mut position = IVec2::new(
         ufo.position.x as i32, //
@@ -141,8 +191,8 @@ fn control_ufo(
         moved = true;
     }
 
-    if !moved {
-        return;
+    if keyboard.just_pressed(KeyCode::H) {
+        lift = true;
     }
 
     if position.x < 0 {
@@ -165,18 +215,165 @@ fn control_ufo(
         return;
     }
 
-    if !ufo.selected {
+    if !ufo.selected && lift {
         tile_event_writer.send(TileStateChangeEvent::new(ufo.position, TileState::Default));
-        tile_event_writer.send(TileStateChangeEvent::new(position, TileState::Selected));
 
-        objc_event_writer.send(ObjectSelectEvent::new(position));
+        objc_event_writer.send(ObjectSelectEvent::new(ufo.position, true));
     }
 
-    ufo.position.x = position.x;
-    ufo.position.y = position.y;
+    if moved {
+        if !ufo.selected {
+            tile_event_writer.send(TileStateChangeEvent::new(ufo.position, TileState::Default));
+            tile_event_writer.send(TileStateChangeEvent::new(position, TileState::Selected));
 
-    let pos = grid.cell_to_world(UVec2::new(ufo.position.x as u32, ufo.position.y as u32));
+            objc_event_writer.send(ObjectSelectEvent::new(position, false));
+        }
 
-    transform.translation.x = pos.x + ufo.offset.x as f32;
-    transform.translation.y = pos.y + ufo.offset.y as f32;
+        ufo.position.x = position.x;
+        ufo.position.y = position.y;
+
+        let world_position =
+            grid.cell_to_world(UVec2::new(ufo.position.x as u32, ufo.position.y as u32));
+
+        transform.translation.x = world_position.x + ufo.offset.x as f32;
+        transform.translation.y = world_position.y + ufo.offset.y as f32;
+    }
+
+    if ufo.selected {
+        let asset = oas.get(ufo.selected_id);
+
+        if lift {
+            let mut occupied = vec![];
+            for pos in &asset.conf.occupy {
+                occupied.push((ufo.position - ufo.selected_difference) + *pos);
+            }
+
+            let mut valid = false;
+            for position in &occupied {
+                if !ufo.selected_valid_cells.contains(position) {
+                    valid = false;
+                    break;
+                }
+
+                valid = true;
+            }
+
+            if valid {
+                ufo.selected = false;
+
+                drop_event_writer.send(UFODropEvent::new(ufo.selected_entity, occupied[0]))
+            }
+        }
+
+        let lift_mod = if !lift { UFO_LIFT_MODIFIER as f32 } else { 0.0 };
+
+        let obj_position = UVec2::new(
+            (ufo.position.x + ufo.selected_difference.x) as u32,
+            (ufo.position.y + ufo.selected_difference.y) as u32,
+        );
+
+        for (entity, obj, mut transform) in &mut obj_query {
+            if entity != ufo.selected_entity {
+                continue;
+            }
+
+            let world_position: Vec2 = grid.cell_to_world(obj_position);
+
+            transform.translation.x = world_position.x + obj.offset.x as f32;
+            transform.translation.y = world_position.y + obj.offset.y as f32 + lift_mod;
+            transform.translation.z = 100.0 + grid.cell_order(obj_position) as f32;
+        }
+    }
+}
+
+fn handle_ufo_lift_event(
+    mut event_writer: EventWriter<TileStateChangeEvent>,
+    mut event_reader: EventReader<UFOLiftEvent>,
+    mut query: Query<&mut UFO>,
+    world: Res<World>,
+    grid: Res<Grid>,
+) {
+    if event_reader.is_empty() {
+        return;
+    }
+    if event_reader.len() > 1 {
+        panic!("Encountered unhandled UFOLiftEvent.");
+    }
+
+    let mut ufo = match query.get_single_mut() {
+        Ok(tuple) => tuple,
+        Err(QuerySingleError::MultipleEntities(_)) => {
+            panic!("Multiple UFOs are present in the scene.")
+        }
+        Err(QuerySingleError::NoEntities(_)) => return,
+    };
+
+    for e in event_reader.iter() {
+        ufo.selected = true;
+        ufo.selected_id = e.id;
+        ufo.selected_entity = e.entity;
+        ufo.selected_difference = e.position - ufo.position;
+        ufo.selected_valid_cells = find_valid_cells(ufo.selected_id, e.position, &world, &grid);
+    }
+
+    for position in &ufo.selected_valid_cells {
+        event_writer.send(TileStateChangeEvent::new(*position, TileState::Selected));
+    }
+}
+
+fn handle_ufo_drop_event(
+    mut event_writer: EventWriter<TileStateChangeEvent>,
+    mut event_reader: EventReader<UFODropEvent>,
+    mut ufo_query: Query<&mut UFO>,
+    mut obj_query: Query<(Entity, &mut Object), With<Selectable>>,
+    mut world: ResMut<World>,
+    oas: Res<ObjectAssetServer>,
+) {
+    if event_reader.is_empty() {
+        return;
+    }
+    if event_reader.len() > 1 {
+        panic!("Encountered unhandled UFODropEvent.");
+    }
+
+    let mut ufo = match ufo_query.get_single_mut() {
+        Ok(tuple) => tuple,
+        Err(QuerySingleError::MultipleEntities(_)) => {
+            panic!("Multiple UFOs are present in the scene.")
+        }
+        Err(QuerySingleError::NoEntities(_)) => return,
+    };
+
+    for pos in &ufo.selected_valid_cells {
+        event_writer.send(TileStateChangeEvent::new(*pos, TileState::Default));
+    }
+
+    for e in event_reader.iter() {
+        for (entity, mut obj) in &mut obj_query {
+            if entity != e.entity {
+                continue;
+            }
+
+            println!("POSITION: {}", e.position);
+
+            let asset = oas.get(obj.id);
+            let world_size = world.size.0 as i32;
+
+            for pos in &obj.occupied {
+                world.objects[((pos.y * world_size) + pos.x) as usize] = None
+            }
+
+            let mut occupied = vec![];
+            for offset in &asset.conf.occupy {
+                occupied.push(e.position + *offset);
+            }
+
+            obj.occupied = occupied;
+            for pos in &obj.occupied {
+                world.objects[((pos.y * world_size) + pos.x) as usize] = Some((entity, obj.id));
+            }
+
+            break;
+        }
+    }
 }

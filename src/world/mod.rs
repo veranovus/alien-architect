@@ -26,8 +26,8 @@ impl Plugin for WorldPlugin {
 
 #[derive(Debug, Resource)]
 pub struct World {
-    size: (u32, u32),
-    objects: Vec<Option<(Entity, ObjectID)>>,
+    pub size: (u32, u32),
+    pub objects: Vec<Option<(Entity, ObjectID)>>,
 }
 
 impl World {
