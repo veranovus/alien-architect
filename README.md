@@ -28,3 +28,4 @@ Super cool puzzle games about managing space and aliens!
   at `object-conf.ron`.
 - `v0.1.7`: Added `offset` property to `Grid`.
 - `v0.1.8`: Re-implemented level loading.
+- `v0.1.9`: Implemented UFO movement.

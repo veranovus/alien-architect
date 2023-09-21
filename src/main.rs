@@ -1,5 +1,6 @@
 use bevy::input::common_conditions::input_toggle_active;
 use bevy::prelude::*;
+use bevy::window::WindowMode;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 mod camera;
@@ -23,6 +24,7 @@ fn main() {
                         title: format!("{} | {}", global::window::TITLE, global::app::PKG_VERSION),
                         resizable: global::window::RESIZABLE,
                         present_mode: global::window::PRESENT_MODE,
+                        mode: WindowMode::Windowed, // TODO: Move this global.rs
                         ..Default::default()
                     }),
                     ..Default::default()
@@ -42,5 +44,6 @@ fn main() {
         .add_plugins(render::RenderPlugin)
         .add_plugins(world::WorldPlugin)
         .add_plugins(object::ObjectPlugin)
+        .add_plugins(player::PlayerPlugin)
         .run();
 }

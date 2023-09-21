@@ -1,5 +1,6 @@
 use crate::object::asset::ObjectAssetServer;
 use crate::object::{Object, ObjectDesc};
+use crate::player::UFO;
 use crate::world::tile::TileMap;
 use crate::world::{self, grid::Grid};
 use bevy::prelude::*;
@@ -55,7 +56,9 @@ fn handle_load_level_event(
     mut world: ResMut<world::World>,
     tilemap: Query<Entity, With<TileMap>>,
     objects: Query<Entity, With<Object>>,
+    ufo: Query<Entity, With<UFO>>,
     oas: Res<ObjectAssetServer>,
+    asset_server: Res<AssetServer>,
     grid: Res<Grid>,
 ) {
     if events.is_empty() {
@@ -92,7 +95,14 @@ fn handle_load_level_event(
         commands.entity(e).despawn_recursive();
     }
 
+    // De-spawn UFO
+    for e in &ufo {
+        commands.entity(e).despawn_recursive();
+    }
+
     world::generate_tiles(&grid, &mut commands);
 
     world::generate_objects(&level_desc.objects, &grid, &oas, &mut world, &mut commands);
+
+    UFO::new(UVec2::new(1, 6), &grid, &asset_server, &mut commands);
 }
