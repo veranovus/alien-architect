@@ -52,6 +52,7 @@ fn control_load_level(mut events: EventWriter<LoadLevelEvent>, keyboard: Res<Inp
 fn handle_load_level_event(
     mut commands: Commands,
     mut events: EventReader<LoadLevelEvent>,
+    mut world: ResMut<world::World>,
     tilemap: Query<Entity, With<TileMap>>,
     objects: Query<Entity, With<Object>>,
     oas: Res<ObjectAssetServer>,
@@ -93,7 +94,5 @@ fn handle_load_level_event(
 
     world::generate_tiles(&grid, &mut commands);
 
-    for obj_desc in &level_desc.objects {
-        Object::new(obj_desc.id, obj_desc.position, &grid, &oas, &mut commands);
-    }
+    world::generate_objects(&level_desc.objects, &grid, &oas, &mut world, &mut commands);
 }

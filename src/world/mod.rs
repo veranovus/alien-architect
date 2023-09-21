@@ -1,4 +1,5 @@
-use crate::object::ObjectID;
+use crate::object::asset::ObjectAssetServer;
+use crate::object::{Object, ObjectDesc, ObjectID};
 use crate::world::grid::{Grid, GridPlugin};
 use crate::world::level::LevelPlugin;
 use crate::world::tile::{TileMap, TilePlugin};
@@ -70,4 +71,46 @@ pub fn generate_tiles(grid: &Grid, commands: &mut Commands) {
     }
 
     TileMap::new(&tiles, commands);
+}
+
+pub fn generate_objects(
+    objects: &Vec<ObjectDesc>,
+    grid: &Grid,
+    oas: &ObjectAssetServer,
+    world: &mut World,
+    commands: &mut Commands,
+) {
+    world.objects.fill(None);
+
+    let (mut king, mut castle) = (false, false);
+
+    for od in objects {
+        if !king {
+            if let ObjectID::King = od.id {
+                king = true;
+            }
+        } else {
+            if let ObjectID::King = od.id {
+                panic!("There can't be more than one King in a level.");
+            }
+        }
+
+        if !castle {
+            if let ObjectID::Castle = od.id {
+                castle = true;
+            }
+        } else {
+            if let ObjectID::Castle = od.id {
+                panic!("There can't be more than one Castle in a level.");
+            }
+        }
+
+        let index = ((od.position.y * world.size.0) + od.position.x) as usize;
+
+        world.objects[index] = Some((Object::new(od.id, od.position, grid, oas, commands), od.id));
+    }
+
+    if !king | !castle {
+        panic!("Encountered incomplete level, either King or Castle is missing.");
+    }
 }

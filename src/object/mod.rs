@@ -85,10 +85,10 @@ impl Object {
         id: ObjectID,
         position: UVec2,
         grid: &Grid,
-        ocs: &ObjectAssetServer,
+        oas: &ObjectAssetServer,
         commands: &mut Commands,
     ) -> Entity {
-        let asset = ocs.get(id);
+        let asset = oas.get(id);
 
         let world_position = grid.cell_to_world(position);
 
