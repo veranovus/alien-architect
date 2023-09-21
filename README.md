@@ -24,3 +24,6 @@ Super cool puzzle games about managing space and aliens!
 - `v0.1.5`: Refactored Grid, and switched from Map to World.
 - `v0.1.6`: Refactored loading levels.
 - `v0.1.7`: Camera module.
+- `v0.1.7`: Refactored object asset loading, and added `ObjectConf`, which are pre-made configurations stored
+  at `object-conf.ron`.
+- `v0.1.7`: Added `offset` property to `Grid`.

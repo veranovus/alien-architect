@@ -4,6 +4,7 @@ use crate::world::grid::Grid;
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 pub mod asset;
 
@@ -22,7 +23,7 @@ impl Plugin for ObjectPlugin {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ObjectDesc {
     pub id: ObjectID,
-    pub position: IVec2,
+    pub position: UVec2,
 }
 
 #[allow(dead_code)]
@@ -45,12 +46,37 @@ pub enum ObjectID {
     Tavern,
 }
 
+impl fmt::Display for ObjectID {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+#[derive(Debug, Component)]
+pub struct Selectable {
+    pub selected: bool,
+}
+
+impl Selectable {
+    pub fn new() -> Self {
+        Self { selected: false }
+    }
+}
+
+#[derive(Debug, Component)]
+pub struct Animated;
+
+impl Animated {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
 #[derive(Debug, Component)]
 pub struct Object {
     pub id: ObjectID,
     pub name: String,
-    pub position: UVec2,
-    pub movable: bool,
+    pub occupied: Vec<UVec2>,
 }
 
 impl Object {
@@ -58,33 +84,57 @@ impl Object {
         id: ObjectID,
         position: UVec2,
         grid: &Grid,
-        oas: &ObjectAssetServer,
+        ocs: &ObjectAssetServer,
         commands: &mut Commands,
     ) -> Entity {
-        let asset = oas.get(id);
+        let asset = ocs.get(id);
 
         let world_position = grid.cell_to_world(position) + grid.cell_center_offset();
 
-        return commands
+        let mut occupied = vec![];
+        for offset in &asset.conf.occupied {
+            occupied.push(UVec2::new(position.x + offset.x, position.y + offset.y));
+        }
+
+        let entity = commands
             .spawn((
                 SpriteBundle {
                     transform: Transform::from_xyz(world_position.x, world_position.y, 0.0),
-                    texture: asset.handle.clone(),
+                    texture: asset.assets[0].clone(),
                     sprite: Sprite {
-                        anchor: Anchor::Custom(asset.origin),
+                        anchor: Anchor::Custom(asset.conf.offset),
                         ..Default::default()
                     },
                     ..Default::default()
                 },
                 Object {
                     id,
-                    name: asset.name,
-                    position,
-                    movable: id.movable(),
+                    occupied,
+                    name: asset.conf.name.clone(),
                 },
                 RenderLayer::Entity(grid.cell_order(position) as usize),
-                Name::new(asset.name),
+                Name::new(asset.conf.name.clone()),
             ))
             .id();
+
+        if asset.conf.selectable {
+            commands.entity(entity).insert(Selectable::new());
+        }
+
+        if asset.conf.animated {
+            commands.entity(entity).insert(Animated::new());
+        }
+
+        return entity;
     }
 }
+
+/************************************************************
+ * - Notes
+ *
+ * UFO -> Sends select event, with UFO's position.
+ * Check every selectable object's occupied areas.
+ * IF T -> Cache relative position difference, set selected.
+ *      -> UFO's in selected mode, send change pos every time it moves.
+ * IF N -> Send non-selectable event as response to UFO.
+ */

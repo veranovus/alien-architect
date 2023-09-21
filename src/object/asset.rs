@@ -21,6 +21,34 @@ const OBJECT_CONFIG_PATH: &str = "assets/object-conf.ron";
  * - Types
  */
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ObjectConf {
+    pub id: ObjectID,
+    pub name: String,
+    pub selectable: bool,
+    pub animated: bool,
+    pub occupied: Vec<UVec2>,
+    pub offset: Vec2,
+    assets: Vec<String>,
+}
+
+#[derive(Debug)]
+pub struct ObjectAsset {
+    pub conf: ObjectConf,
+    pub assets: Vec<Handle<Image>>,
+}
+
+impl ObjectAsset {
+    fn new(conf: ObjectConf, asset_server: &AssetServer) -> Self {
+        let mut assets = vec![];
+        for path in &conf.assets {
+            assets.push(asset_server.load(path));
+        }
+
+        Self { conf, assets }
+    }
+}
+
 #[derive(Debug, Resource)]
 pub struct ObjectAssetServer {
     assets: HashMap<ObjectID, ObjectAsset>,
@@ -35,7 +63,7 @@ impl ObjectAssetServer {
 
     pub fn get(&self, id: ObjectID) -> &ObjectAsset {
         return match self.assets.get(&id) {
-            None => panic!("Failed to get asset for ObjectID::{}.", id.to_string()),
+            None => panic!("Failed to get object configuration for {}.", id.to_string()),
             Some(asset) => asset,
         };
     }
@@ -46,23 +74,20 @@ impl ObjectAssetServer {
  */
 
 fn load_object_assets(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let mut oas = ObjectAssetServer::new();
+    let mut ocs = ObjectAssetServer::new();
 
-    let aconf: AssetConf = if let Ok(contents) = std::fs::read_to_string(ASSET_CONFIG_PATH) {
+    let confs: Vec<ObjectConf> = if let Ok(contents) = std::fs::read_to_string(OBJECT_CONFIG_PATH) {
         ron::from_str(&contents).unwrap()
     } else {
         panic!(
             "Failed to read file to load AssetConf, `{}`.",
-            ASSET_CONFIG_PATH
+            OBJECT_CONFIG_PATH
         );
     };
 
-    for desc in &aconf.descs {
-        oas.assets.insert(
-            desc.id,
-            ObjectAsset::new(asset_server.load(&desc.path), desc.origin),
-        );
+    for c in confs {
+        ocs.assets.insert(c.id, ObjectAsset::new(c, &asset_server));
     }
 
-    commands.insert_resource(oas);
+    commands.insert_resource(ocs);
 }

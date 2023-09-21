@@ -1,17 +1,35 @@
-AssetConf(
-    descs: [
-        (id: King, path: "objects/king.png", origin: (0.0, -0.25)),
-        (id: Villager, path: "objects/village.png", origin: (0.0, 0.0)),
-        (id: Cow, path: "objects/cow.png", origin: (0.0, 0.0)),
-        (id: Assassin, path: "objects/assassin.png", origin: (0.0, 0.0)),
-        (id: Castle, path: "objects/castle.png", origin: (0.0, 0.0)),
-        (id: Mountain, path: "objects/mountain.png", origin: (0.0, -0.325)),
-        (id: Field, path: "objects/field.png", origin: (0.0, 0.0)),
-        (id: House, path: "objects/house.png", origin: (0.0, 0.0)),
-        (id: BigHouse, path: "objects/big_house.png", origin: (0.0, 0.0)),
-        (id: Farm, path: "objects/farm.png", origin: (0.0, 0.0)),
-        (id: Tower, path: "objects/tower.png", origin: (0.0, 0.0)),
-        (id: Church, path: "objects/church.png", origin: (0.0, 0.0)),
-        (id: Tavern, path: "objects/tavern.png", origin: (0.0, 0.0)),
-    ]
-)
+[
+    ObjectConf(
+        id: King,
+        name: "King",
+        selectable: false,
+        animated: true,
+        occupied: [
+            (0, 0),
+        ],
+        offset: (0.0, -0.2),
+        assets: [
+            "objects/king_0.png",
+            "objects/king_1.png",
+            "objects/king_2.png",
+            "objects/king_3.png",
+            "objects/king_4.png",
+            "objects/king_5.png",
+            "objects/king_6.png",
+            "objects/king_7.png",
+        ],
+    ),
+    ObjectConf(
+        id: Mountain,
+        name: "Mountain",
+        selectable: false,
+        animated: false,
+        occupied: [
+            (0, 0),
+        ],
+        offset: (0.0, -0.12),
+        assets: [
+            "objects/mountain.png",
+        ],
+    ),
+]

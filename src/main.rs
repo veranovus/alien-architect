@@ -41,6 +41,6 @@ fn main() {
         .add_plugins(camera::CameraPlugin)
         .add_plugins(render::RenderPlugin)
         .add_plugins(world::WorldPlugin)
-        //.add_plugins(object::ObjectPlugin)
+        .add_plugins(object::ObjectPlugin)
         .run();
 }

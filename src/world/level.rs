@@ -1,4 +1,5 @@
-use crate::object::ObjectDesc;
+use crate::object::asset::ObjectAssetServer;
+use crate::object::{Object, ObjectDesc};
 use crate::world::tile::TileMap;
 use crate::world::{self, grid::Grid};
 use bevy::prelude::*;
@@ -45,13 +46,15 @@ fn control_load_level(mut events: EventWriter<LoadLevelEvent>, keyboard: Res<Inp
         return;
     }
 
-    events.send(LoadLevelEvent::new("scn/test-level.ron"));
+    events.send(LoadLevelEvent::new("assets/scn/test-level.ron"));
 }
 
 fn handle_load_level_event(
     mut commands: Commands,
     mut events: EventReader<LoadLevelEvent>,
     tilemap: Query<Entity, With<TileMap>>,
+    objects: Query<Entity, With<Object>>,
+    oas: Res<ObjectAssetServer>,
     grid: Res<Grid>,
 ) {
     if events.is_empty() {
@@ -72,9 +75,25 @@ fn handle_load_level_event(
         first = false;
     }
 
+    let level_desc: LevelDesc = if let Ok(contents) = std::fs::read_to_string(&path) {
+        ron::from_str(&contents).unwrap()
+    } else {
+        panic!("Failed to load LevelDesc from, `{}`.", path);
+    };
+
+    // De-spawn TileMap
     for e in &tilemap {
         commands.entity(e).despawn_recursive();
     }
 
+    // De-spawn Objects
+    for e in &objects {
+        commands.entity(e).despawn_recursive();
+    }
+
     world::generate_tiles(&grid, &mut commands);
+
+    for obj_desc in &level_desc.objects {
+        Object::new(obj_desc.id, obj_desc.position, &grid, &oas, &mut commands);
+    }
 }
