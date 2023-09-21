@@ -62,13 +62,6 @@ impl Grid {
             (pos.y * ((self.cell_size.1 - self.cell_offset.1) / 2)) as f32 + self.offset.1 as f32,
         );
     }
-
-    pub fn cell_center_offset(&self) -> Vec2 {
-        return Vec2::new(
-            (self.cell_offset.0 + ((self.cell_size.0 - self.cell_offset.1) / 2)) as f32,
-            (self.cell_offset.1 + ((self.cell_size.1 - self.cell_offset.1) / 2)) as f32,
-        );
-    }
 }
 
 /************************************************************

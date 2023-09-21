@@ -5,7 +5,7 @@
         name: "King",
         selectable: false,
         animated: true,
-        occupied: [
+        occupy: [
             (0, 0),
         ],
         offset: (7, 7),
@@ -25,7 +25,7 @@
         name: "Villager",
         selectable: true,
         animated: false,
-        occupied: [
+        occupy: [
             (0, 0),
         ],
         offset: (0, 0),
@@ -38,7 +38,7 @@
         name: "Cow",
         selectable: true,
         animated: false,
-        occupied: [
+        occupy: [
             (0, 0),
         ],
         offset: (0, 0),
@@ -51,7 +51,7 @@
         name: "Assassin",
         selectable: false,
         animated: false,
-        occupied: [
+        occupy: [
             (0, 0),
         ],
         offset: (0, 0),
@@ -65,7 +65,7 @@
         name: "Castle",
         selectable: false,
         animated: false,
-        occupied: [
+        occupy: [
             (0, 0),
         ],
         offset: (0, 0),
@@ -78,7 +78,7 @@
         name: "Mountain",
         selectable: false,
         animated: false,
-        occupied: [
+        occupy: [
             (0, 0),
         ],
         offset: (1, 3),
@@ -91,7 +91,7 @@
         name: "Field",
         selectable: false,
         animated: false,
-        occupied: [
+        occupy: [
             (0, 0),
         ],
         offset: (0, 0),
@@ -104,7 +104,7 @@
         name: "House",
         selectable: true,
         animated: false,
-        occupied: [
+        occupy: [
             (0, 0),
         ],
         offset: (0, 0),
@@ -118,7 +118,7 @@
         name: "Big House",
         selectable: true,
         animated: false,
-        occupied: [
+        occupy: [
             (0, 0),
         ],
         offset: (0, 0),
@@ -132,7 +132,7 @@
         name: "Farm",
         selectable: true,
         animated: false,
-        occupied: [
+        occupy: [
             (0, 0),
         ],
         offset: (0, 0),
@@ -146,7 +146,7 @@
         name: "Tower",
         selectable: true,
         animated: false,
-        occupied: [
+        occupy: [
             (0, 0),
         ],
         offset: (0, 0),
@@ -160,7 +160,7 @@
         name: "Church",
         selectable: true,
         animated: false,
-        occupied: [
+        occupy: [
             (0, 0),
             (1, 1),
         ],
@@ -175,7 +175,7 @@
         name: "Tavern",
         selectable: true,
         animated: false,
-        occupied: [
+        occupy: [
             (0, 0),
             (0, 1)
         ],

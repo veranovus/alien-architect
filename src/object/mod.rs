@@ -76,8 +76,8 @@ impl Animated {
 pub struct Object {
     pub id: ObjectID,
     pub name: String,
-    pub occupied: Vec<UVec2>,
-    offset: UVec2,
+    pub occupied: Vec<IVec2>,
+    offset: IVec2,
 }
 
 impl Object {
@@ -93,8 +93,11 @@ impl Object {
         let world_position = grid.cell_to_world(position);
 
         let mut occupied = vec![];
-        for offset in &asset.conf.occupied {
-            occupied.push(UVec2::new(position.x + offset.x, position.y + offset.y));
+        for offset in &asset.conf.occupy {
+            occupied.push(IVec2::new(
+                position.x as i32 + offset.x,
+                position.y as i32 + offset.y,
+            ));
         }
 
         let entity = commands
