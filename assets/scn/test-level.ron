@@ -1,6 +1,7 @@
 LevelDesc(
     objects: [
         (id: Mountain, position: (3, 8)),
+        (id: Mountain, position: (2, 7)),
         (id: King, position: (4, 7)),
     ],
 )

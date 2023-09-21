@@ -27,7 +27,7 @@
         occupied: [
             (0, 0),
         ],
-        offset: (0.0, -0.12),
+        offset: (0.0, -0.1175),
         assets: [
             "objects/mountain.png",
         ],
