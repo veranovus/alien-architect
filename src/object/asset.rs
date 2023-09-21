@@ -28,7 +28,7 @@ pub struct ObjectConf {
     pub selectable: bool,
     pub animated: bool,
     pub occupied: Vec<UVec2>,
-    pub offset: Vec2,
+    pub offset: UVec2,
     assets: Vec<String>,
 }
 

@@ -1,4 +1,5 @@
 [
+    // Entities
     ObjectConf(
         id: King,
         name: "King",
@@ -7,7 +8,7 @@
         occupied: [
             (0, 0),
         ],
-        offset: (0.0, -0.2),
+        offset: (7, 7),
         assets: [
             "objects/king_0.png",
             "objects/king_1.png",
@@ -20,6 +21,59 @@
         ],
     ),
     ObjectConf(
+        id: Villager,
+        name: "Villager",
+        selectable: true,
+        animated: false,
+        occupied: [
+            (0, 0),
+        ],
+        offset: (0, 0),
+        assets: [
+            "objects/villager.png",
+        ],
+    ),
+    ObjectConf(
+        id: Cow,
+        name: "Cow",
+        selectable: true,
+        animated: false,
+        occupied: [
+            (0, 0),
+        ],
+        offset: (0, 0),
+        assets: [
+            "objects/cow.png",
+        ],
+    ),
+    ObjectConf(
+        id: Assassin,
+        name: "Assassin",
+        selectable: false,
+        animated: false,
+        occupied: [
+            (0, 0),
+        ],
+        offset: (0, 0),
+        assets: [
+            "objects/assassin.png",
+        ],
+    ),
+    // Buildings
+    ObjectConf(
+        id: Castle,
+        name: "Castle",
+        selectable: false,
+        animated: false,
+        occupied: [
+            (0, 0),
+        ],
+        offset: (0, 0),
+        assets: [
+            "objects/castle.png",
+        ],
+    ),
+    ObjectConf(
         id: Mountain,
         name: "Mountain",
         selectable: false,
@@ -27,9 +81,108 @@
         occupied: [
             (0, 0),
         ],
-        offset: (0.0, -0.1175),
+        offset: (1, 3),
         assets: [
             "objects/mountain.png",
+        ],
+    ),
+    ObjectConf(
+        id: Field,
+        name: "Field",
+        selectable: false,
+        animated: false,
+        occupied: [
+            (0, 0),
+        ],
+        offset: (0, 0),
+        assets: [
+            "objects/field.png",
+        ],
+    ),
+    ObjectConf(
+        id: House,
+        name: "House",
+        selectable: true,
+        animated: false,
+        occupied: [
+            (0, 0),
+        ],
+        offset: (0, 0),
+        assets: [
+            "objects/small_house.png",
+            "objects/small_house_selected.png",
+        ],
+    ),
+    ObjectConf(
+        id: BigHouse,
+        name: "Big House",
+        selectable: true,
+        animated: false,
+        occupied: [
+            (0, 0),
+        ],
+        offset: (0, 0),
+        assets: [
+            "objects/big_house.png",
+            "objects/big_house_selected.png",
+        ],
+    ),
+    ObjectConf(
+        id: Farm,
+        name: "Farm",
+        selectable: true,
+        animated: false,
+        occupied: [
+            (0, 0),
+        ],
+        offset: (0, 0),
+        assets: [
+            "objects/farm.png",
+            "objects/farm_selected.png",
+        ],
+    ),
+    ObjectConf(
+        id: Tower,
+        name: "Tower",
+        selectable: true,
+        animated: false,
+        occupied: [
+            (0, 0),
+        ],
+        offset: (0, 0),
+        assets: [
+            "objects/tower.png",
+            "objects/tower_selected.png",
+        ],
+    ),
+    ObjectConf(
+        id: Church,
+        name: "Church",
+        selectable: true,
+        animated: false,
+        occupied: [
+            (0, 0),
+            (1, 1),
+        ],
+        offset: (0, 0),
+        assets: [
+            "objects/church.png",
+            "objects/church_selected.png",
+        ],
+    ),
+    ObjectConf(
+        id: Tavern,
+        name: "Tavern",
+        selectable: true,
+        animated: false,
+        occupied: [
+            (0, 0),
+            (0, 1)
+        ],
+        offset: (0, 0),
+        assets: [
+            "objects/tavern.png",
+            "objects/tavern_selected.png",
         ],
     ),
 ]

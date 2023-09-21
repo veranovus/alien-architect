@@ -77,6 +77,7 @@ pub struct Object {
     pub id: ObjectID,
     pub name: String,
     pub occupied: Vec<UVec2>,
+    offset: UVec2,
 }
 
 impl Object {
@@ -89,7 +90,7 @@ impl Object {
     ) -> Entity {
         let asset = ocs.get(id);
 
-        let world_position = grid.cell_to_world(position) + grid.cell_center_offset();
+        let world_position = grid.cell_to_world(position);
 
         let mut occupied = vec![];
         for offset in &asset.conf.occupied {
@@ -99,10 +100,14 @@ impl Object {
         let entity = commands
             .spawn((
                 SpriteBundle {
-                    transform: Transform::from_xyz(world_position.x, world_position.y, 0.0),
+                    transform: Transform::from_xyz(
+                        world_position.x + asset.conf.offset.x as f32,
+                        world_position.y + asset.conf.offset.y as f32,
+                        0.0,
+                    ),
                     texture: asset.assets[0].clone(),
                     sprite: Sprite {
-                        anchor: Anchor::Custom(asset.conf.offset),
+                        anchor: Anchor::BottomLeft,
                         ..Default::default()
                     },
                     ..Default::default()
@@ -111,6 +116,7 @@ impl Object {
                     id,
                     occupied,
                     name: asset.conf.name.clone(),
+                    offset: asset.conf.offset,
                 },
                 RenderLayer::Entity(grid.cell_order(position) as usize),
                 Name::new(asset.conf.name.clone()),
