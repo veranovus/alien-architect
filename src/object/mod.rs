@@ -12,7 +12,12 @@ pub struct ObjectPlugin;
 
 impl Plugin for ObjectPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(asset::AssetPlugin);
+        app.add_event::<ObjectSelectEvent>()
+            .add_plugins(asset::AssetPlugin)
+            .add_systems(
+                PostUpdate,
+                (handle_select_object_event, update_object_image),
+            );
     }
 }
 
@@ -49,6 +54,17 @@ pub enum ObjectID {
 impl fmt::Display for ObjectID {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
+    }
+}
+
+#[derive(Debug, Event)]
+pub struct ObjectSelectEvent {
+    position: IVec2,
+}
+
+impl ObjectSelectEvent {
+    pub fn new(position: IVec2) -> Self {
+        Self { position }
     }
 }
 
@@ -135,6 +151,43 @@ impl Object {
         }
 
         return entity;
+    }
+}
+
+/************************************************************
+ * - System Functions
+ */
+
+fn handle_select_object_event(
+    mut event_reader: EventReader<ObjectSelectEvent>,
+    mut query: Query<(&Object, &mut Selectable)>,
+) {
+    for e in event_reader.iter() {
+        let mut selected = false;
+
+        for (obj, mut selectable) in &mut query {
+            if obj.occupied.contains(&e.position) && !selected {
+                selectable.selected = true;
+
+                selected = true;
+                continue;
+            }
+
+            selectable.selected = false;
+        }
+    }
+}
+
+fn update_object_image(
+    mut query: Query<(&Object, &Selectable, &mut Handle<Image>), Changed<Selectable>>,
+    oas: Res<ObjectAssetServer>,
+) {
+    for (obj, selectable, mut handle) in &mut query {
+        if selectable.selected {
+            *handle = oas.get(obj.id).assets[1].clone();
+        } else {
+            *handle = oas.get(obj.id).assets[0].clone();
+        }
     }
 }
 

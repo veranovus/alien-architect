@@ -1,3 +1,4 @@
+use crate::object::ObjectSelectEvent;
 use crate::world::grid::Grid;
 use crate::world::tile::{TileState, TileStateChangeEvent};
 use bevy::ecs::query::QuerySingleError;
@@ -27,6 +28,7 @@ const UFO_SPRITE_OFFSET: (i32, i32) = (5, 4 + 23);
 #[derive(Debug, Component)]
 pub struct UFO {
     position: IVec2,
+    selected: bool,
     offset: IVec2,
 }
 
@@ -60,6 +62,7 @@ impl UFO {
                 },
                 UFO {
                     position,
+                    selected: false,
                     offset: IVec2::new(UFO_SPRITE_OFFSET.0, UFO_SPRITE_OFFSET.1),
                 },
                 Name::new("UFO"),
@@ -74,7 +77,8 @@ impl UFO {
 
 fn control_ufo(
     mut query: Query<(&mut UFO, &mut Transform)>,
-    mut events: EventWriter<TileStateChangeEvent>,
+    mut tile_event_writer: EventWriter<TileStateChangeEvent>,
+    mut objc_event_writer: EventWriter<ObjectSelectEvent>,
     grid: Res<Grid>,
     keyboard: Res<Input<KeyCode>>,
 ) {
@@ -161,12 +165,15 @@ fn control_ufo(
         return;
     }
 
-    events.send(TileStateChangeEvent::new(ufo.position, TileState::Default));
+    if !ufo.selected {
+        tile_event_writer.send(TileStateChangeEvent::new(ufo.position, TileState::Default));
+        tile_event_writer.send(TileStateChangeEvent::new(position, TileState::Selected));
+
+        objc_event_writer.send(ObjectSelectEvent::new(position));
+    }
 
     ufo.position.x = position.x;
     ufo.position.y = position.y;
-
-    events.send(TileStateChangeEvent::new(ufo.position, TileState::Selected));
 
     let pos = grid.cell_to_world(UVec2::new(ufo.position.x as u32, ufo.position.y as u32));
 

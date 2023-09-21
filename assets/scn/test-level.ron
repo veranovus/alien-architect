@@ -4,7 +4,11 @@ LevelDesc(
         (id: Castle, position: (1, 1)),
         (id: Field, position: (3, 0)),
         (id: House, position: (3, 4)),
+        (id: BigHouse, position: (3, 7)),
+        (id: Church, position: (0, 7)),
+        (id: Mountain, position: (4, 8)),
         (id: Mountain, position: (3, 8)),
+        (id: Mountain, position: (2, 8)),
         (id: Mountain, position: (2, 7)),
     ],
 )

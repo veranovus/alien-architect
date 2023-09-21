@@ -24,19 +24,13 @@ fn main() {
                         title: format!("{} | {}", global::window::TITLE, global::app::PKG_VERSION),
                         resizable: global::window::RESIZABLE,
                         present_mode: global::window::PRESENT_MODE,
-                        mode: WindowMode::Windowed, // TODO: Move this global.rs
+                        mode: global::window::MODE,
                         ..Default::default()
                     }),
                     ..Default::default()
                 }),
         )
-        /*
-        .insert_resource(ClearColor(Color::rgb(
-            206.0 / 255.0,
-            192.0 / 255.0,
-            167.0 / 255.0,
-        )))
-         */
+        .insert_resource(ClearColor(Color::BLACK))
         .add_plugins(
             WorldInspectorPlugin::default().run_if(input_toggle_active(false, KeyCode::Grave)),
         )

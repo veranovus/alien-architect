@@ -1,7 +1,7 @@
 // WINDOW
 
 pub mod window {
-    use bevy::window::PresentMode;
+    use bevy::window::{PresentMode, WindowMode};
 
     // Resolution => (160 x 144)
     //     Scaled => (800 x 720)
@@ -15,6 +15,8 @@ pub mod window {
     pub const TITLE: &str = "Alien Architect";
     pub const PRESENT_MODE: PresentMode = PresentMode::Fifo;
     pub const RESIZABLE: bool = false;
+
+    pub const MODE: WindowMode = WindowMode::Windowed;
 }
 
 // APP
