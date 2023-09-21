@@ -12,7 +12,7 @@ impl Plugin for PlayerPlugin {
  * - Types
  */
 
-const UFO_TEXUTRE_PATH: &str = "temp/ufo.png";
+const UFO_TEXUTRE_PATH: &str = "ufo.png";
 
 /************************************************************
  * - Types
