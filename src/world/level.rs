@@ -1,7 +1,7 @@
 use crate::object::asset::ObjectAssetServer;
 use crate::object::{Object, ObjectDesc};
 use crate::player::UFO;
-use crate::world::tile::TileMap;
+use crate::world::tile::{TileMap, TileStateChangeEvent};
 use crate::world::{self, grid::Grid};
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -52,7 +52,8 @@ fn control_load_level(mut events: EventWriter<LoadLevelEvent>, keyboard: Res<Inp
 
 fn handle_load_level_event(
     mut commands: Commands,
-    mut events: EventReader<LoadLevelEvent>,
+    mut event_reader: EventReader<LoadLevelEvent>,
+    mut event_writer: EventWriter<TileStateChangeEvent>,
     mut world: ResMut<world::World>,
     tilemap: Query<Entity, With<TileMap>>,
     objects: Query<Entity, With<Object>>,
@@ -61,14 +62,14 @@ fn handle_load_level_event(
     asset_server: Res<AssetServer>,
     grid: Res<Grid>,
 ) {
-    if events.is_empty() {
+    if event_reader.is_empty() {
         return;
     }
 
     let mut path = String::new();
 
     let mut first = true;
-    for e in events.iter() {
+    for e in event_reader.iter() {
         if !first {
             warn!("Encountered unhandled LoadLevelEvent.");
             continue;
@@ -104,5 +105,11 @@ fn handle_load_level_event(
 
     world::generate_objects(&level_desc.objects, &grid, &oas, &mut world, &mut commands);
 
-    UFO::new(UVec2::new(1, 6), &grid, &asset_server, &mut commands);
+    UFO::new(
+        IVec2::new(1, 6),
+        &grid,
+        &asset_server,
+        &mut commands,
+        &mut event_writer,
+    );
 }

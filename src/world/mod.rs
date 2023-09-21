@@ -7,7 +7,7 @@ use bevy::prelude::*;
 
 pub mod grid;
 mod level;
-mod tile;
+pub mod tile;
 
 pub struct WorldPlugin;
 

@@ -8,8 +8,12 @@ pub struct TilePlugin;
 
 impl Plugin for TilePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PreStartup, setup_tile_asset_server)
-            .add_systems(PostUpdate, update_tile_image);
+        app.add_event::<TileStateChangeEvent>()
+            .add_systems(PreStartup, setup_tile_asset_server)
+            .add_systems(
+                PostUpdate,
+                (update_tile_image, handle_tile_state_change_event),
+            );
     }
 }
 
@@ -59,6 +63,18 @@ impl TileAssetServer {
         Self {
             assets: HashMap::new(),
         }
+    }
+}
+
+#[derive(Debug, Event)]
+pub struct TileStateChangeEvent {
+    position: IVec2,
+    state: TileState,
+}
+
+impl TileStateChangeEvent {
+    pub fn new(position: IVec2, state: TileState) -> Self {
+        Self { position, state }
     }
 }
 
@@ -165,6 +181,20 @@ fn update_tile_image(
             TileState::Default => *handle = tas.assets.get(&tile.r#type).unwrap()[0].clone(),
             TileState::Selected => *handle = tas.assets.get(&tile.r#type).unwrap()[1].clone(),
             TileState::Path => *handle = tas.assets.get(&tile.r#type).unwrap()[2].clone(),
+        }
+    }
+}
+
+fn handle_tile_state_change_event(
+    mut query: Query<&mut Tile>,
+    mut event_reader: EventReader<TileStateChangeEvent>,
+) {
+    for e in event_reader.iter() {
+        for mut tile in &mut query {
+            if tile.position == e.position {
+                tile.state = e.state;
+                break;
+            }
         }
     }
 }

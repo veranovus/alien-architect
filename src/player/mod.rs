@@ -1,4 +1,5 @@
 use crate::world::grid::Grid;
+use crate::world::tile::{TileState, TileStateChangeEvent};
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
@@ -25,18 +26,22 @@ const UFO_SPRITE_OFFSET: (i32, i32) = (5, 4 + 23);
 
 #[derive(Debug, Component)]
 pub struct UFO {
-    position: UVec2,
+    position: IVec2,
     offset: IVec2,
 }
 
 impl UFO {
     pub fn new(
-        position: UVec2,
+        position: IVec2,
         grid: &Grid,
         asset_server: &AssetServer,
         commands: &mut Commands,
+        events: &mut EventWriter<TileStateChangeEvent>,
     ) -> Entity {
-        let world_position = grid.cell_to_world(position);
+        let world_position: Vec2 =
+            grid.cell_to_world(UVec2::new(position.x as u32, position.y as u32));
+
+        events.send(TileStateChangeEvent::new(position, TileState::Selected));
 
         return commands
             .spawn((
@@ -69,6 +74,7 @@ impl UFO {
 
 fn control_ufo(
     mut query: Query<(&mut UFO, &mut Transform)>,
+    mut events: EventWriter<TileStateChangeEvent>,
     grid: Res<Grid>,
     keyboard: Res<Input<KeyCode>>,
 ) {
@@ -155,10 +161,14 @@ fn control_ufo(
         return;
     }
 
-    ufo.position.x = position.x as u32;
-    ufo.position.y = position.y as u32;
+    events.send(TileStateChangeEvent::new(ufo.position, TileState::Default));
 
-    let pos = grid.cell_to_world(ufo.position);
+    ufo.position.x = position.x;
+    ufo.position.y = position.y;
+
+    events.send(TileStateChangeEvent::new(ufo.position, TileState::Selected));
+
+    let pos = grid.cell_to_world(UVec2::new(ufo.position.x as u32, ufo.position.y as u32));
 
     transform.translation.x = pos.x + ufo.offset.x as f32;
     transform.translation.y = pos.y + ufo.offset.y as f32;
