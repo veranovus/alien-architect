@@ -212,19 +212,18 @@ pub fn find_valid_cells(id: ObjectID, position: IVec2, world: &World, grid: &Gri
             vec![]
         }
         ObjectID::House => {
-            let even = position.y % 2 == 0;
+            let even = position.y % 2;
 
-            // TODO: Just add else's x value 1.
             let adjecteds: Vec<(i32, i32)> = vec![
-                (0, 0), //
+                (0, 0),
                 (0, 2),
                 (0, -2),
                 (1, 0),
                 (-1, 0),
-                if even { (0, 1) } else { (1, 1) },
-                if even { (0, -1) } else { (1, -1) },
-                if even { (-1, 1) } else { (0, 1) },
-                if even { (-1, -1) } else { (0, -1) },
+                (0 + even, 1),
+                (0 + even, -1),
+                (-1 + even, 1),
+                (-1 + even, -1),
             ];
 
             let mut valid = vec![];

@@ -118,7 +118,7 @@ impl UFO {
  * - System Functions
  */
 
-fn control_ufo(
+fn _control_ufo(
     mut drop_event_writer: EventWriter<UFODropEvent>,
     mut tile_event_writer: EventWriter<TileStateChangeEvent>,
     mut objc_event_writer: EventWriter<ObjectSelectEvent>,
@@ -377,3 +377,94 @@ fn handle_ufo_drop_event(
         }
     }
 }
+
+//noinspection DuplicatedCode
+fn control_ufo(
+    mut ufo_query: Query<(&mut UFO, &mut Transform)>,
+    mut tile_event_writer: EventWriter<TileStateChangeEvent>,
+    // mut drop_event_writer: EventWriter<UFOLiftEvent>,
+    grid: Res<Grid>,
+    keys: Res<Input<KeyCode>>,
+) {
+    // Get UFO
+    let (mut ufo, mut transform) = match ufo_query.get_single_mut() {
+        Ok(tuple) => tuple,
+        Err(QuerySingleError::MultipleEntities(_)) => {
+            panic!("Multiple UFOs are present in the scene.")
+        }
+        Err(QuerySingleError::NoEntities(_)) => return,
+    };
+
+    let y_mod = ufo.position.y % 2;
+
+    let mut moved = false;
+    let mut position = ufo.position;
+
+    // Vertical
+    if keys.just_pressed(KeyCode::D) {
+        position.x += 0 + y_mod;
+        position.y += -1;
+
+        moved = true;
+    }
+    if keys.just_pressed(KeyCode::A) {
+        position.x += -1 + y_mod;
+        position.y += 1;
+
+        moved = true;
+    }
+
+    // Horizontal
+    if keys.just_pressed(KeyCode::W) {
+        position.x += 0 + y_mod;
+        position.y += 1;
+
+        moved = true;
+    }
+    if keys.just_pressed(KeyCode::S) {
+        position.x += -1 + y_mod;
+        position.y += -1;
+
+        moved = true;
+    }
+
+    if moved {
+        let past = ufo.position;
+        let moved = ufo_move(position, &mut ufo, &mut transform, &grid);
+
+        if moved {
+            tile_event_writer.send(TileStateChangeEvent::new(past, TileState::Default));
+            tile_event_writer.send(TileStateChangeEvent::new(ufo.position, TileState::Selected));
+        }
+    }
+}
+
+fn ufo_move(target: IVec2, ufo: &mut UFO, transform: &mut Transform, grid: &Grid) -> bool {
+    if (target.x < 0 || target.x >= grid.size.0 as i32)
+        || (target.y < 0 || target.y >= grid.size.1 as i32)
+    {
+        return false;
+    }
+
+    let index = ((target.y * grid.size.0 as i32) + target.x) as usize;
+    if grid.grid[index] == 0 {
+        return false;
+    }
+
+    ufo.position.x = target.x;
+    ufo.position.y = target.y;
+
+    let world_position =
+        grid.cell_to_world(UVec2::new(ufo.position.x as u32, ufo.position.y as u32));
+
+    transform.translation.x = world_position.x + ufo.offset.x as f32;
+    transform.translation.y = world_position.y + ufo.offset.y as f32;
+
+    return true;
+}
+
+fn ufo_lift() {}
+
+fn ufo_drop() {}
+
+fn ufo_move_object(ufo_query: Query<&UFO>) {}
