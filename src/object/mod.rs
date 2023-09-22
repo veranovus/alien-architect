@@ -1,5 +1,4 @@
 use crate::object::asset::ObjectAssetServer;
-use crate::player::UFOLiftEvent;
 use crate::render::RenderLayer;
 use crate::world::{grid::Grid, World};
 use bevy::prelude::*;
@@ -62,12 +61,11 @@ impl fmt::Display for ObjectID {
 #[derive(Debug, Event)]
 pub struct ObjectSelectEvent {
     position: IVec2,
-    callback: bool,
 }
 
 impl ObjectSelectEvent {
-    pub fn new(position: IVec2, callback: bool) -> Self {
-        Self { position, callback }
+    pub fn new(position: IVec2) -> Self {
+        Self { position }
     }
 }
 
@@ -162,7 +160,6 @@ impl Object {
  */
 
 fn handle_select_object_event(
-    mut event_writer: EventWriter<UFOLiftEvent>,
     mut event_reader: EventReader<ObjectSelectEvent>,
     mut query: Query<(Entity, &Object, &mut Selectable)>,
 ) {
@@ -172,10 +169,6 @@ fn handle_select_object_event(
         for (entity, obj, mut selectable) in &mut query {
             if obj.occupied.contains(&e.position) && !selected {
                 selectable.selected = true;
-
-                if e.callback {
-                    event_writer.send(UFOLiftEvent::new(obj.id, entity, obj.occupied[0]));
-                }
 
                 selected = true;
                 continue;
@@ -203,6 +196,14 @@ fn update_object_image(
  * - Helper Functions
  */
 
+pub fn move_object(
+    target: IVec2,
+    object: &mut Object,
+    transform: &mut Transform,
+    oas: &ObjectAssetServer,
+) {
+}
+
 pub fn find_valid_cells(id: ObjectID, position: IVec2, world: &World, grid: &Grid) -> Vec<IVec2> {
     return match id {
         ObjectID::Villager => {
@@ -213,7 +214,6 @@ pub fn find_valid_cells(id: ObjectID, position: IVec2, world: &World, grid: &Gri
         }
         ObjectID::House => {
             let even = position.y % 2;
-
             let adjecteds: Vec<(i32, i32)> = vec![
                 (0, 0),
                 (0, 2),
@@ -228,19 +228,18 @@ pub fn find_valid_cells(id: ObjectID, position: IVec2, world: &World, grid: &Gri
 
             let mut valid = vec![];
             for (x, y) in adjecteds {
-                let new = IVec2::new(position.x + x, position.y + y);
-                println!("TARGET: {}", new);
+                let target = IVec2::new(position.x + x, position.y + y);
 
-                if (new.x < 0 || new.x >= grid.size.0 as i32)
-                    || (new.y < 0 || new.y >= grid.size.1 as i32)
+                if (target.x < 0 || target.x >= grid.size.0 as i32)
+                    || (target.y < 0 || target.y >= grid.size.1 as i32)
                 {
                     continue;
                 }
-                if grid.grid[((new.y * grid.size.0 as i32) + new.x) as usize] == 0 {
+                if grid.grid[((target.y * grid.size.0 as i32) + target.x) as usize] == 0 {
                     continue;
                 }
 
-                valid.push(new);
+                valid.push(target);
             }
 
             valid
