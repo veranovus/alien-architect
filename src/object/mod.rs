@@ -107,12 +107,18 @@ impl Object {
     ) -> Entity {
         let asset = oas.get(id);
 
+        let y_mod = position.y % 2;
         let world_position = grid.cell_to_world(position);
 
         let mut occupied = vec![];
-        for offset in &asset.conf.occupy {
+        for (i, offset) in asset.conf.occupy.iter().enumerate() {
             occupied.push(IVec2::new(
-                position.x as i32 + offset.x,
+                position.x as i32
+                    + (if i == 0 {
+                        offset.x
+                    } else {
+                        offset.x + y_mod as i32
+                    }),
                 position.y as i32 + offset.y,
             ));
         }

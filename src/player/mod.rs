@@ -448,7 +448,9 @@ fn control_ufo(
             tile_event_writer.send(TileStateChangeEvent::new(t, TileState::Default));
             tile_event_writer.send(TileStateChangeEvent::new(ufo.position, TileState::Selected));
 
-            objc_event_writer.send(ObjectSelectEvent::new(ufo.position));
+            if ufo.selected.is_none() {
+                objc_event_writer.send(ObjectSelectEvent::new(ufo.position));
+            }
         }
     }
 }
@@ -503,7 +505,20 @@ fn ufo_carry_object(
         }
 
         let asset = oas.get(obj.id);
-        let target = ufo.position - asset.conf.occupy[selection.occupy_index];
+
+        let y_mod = (ufo.position.y + 1) % 2;
+        let diff = if selection.occupy_index == 0 {
+            asset.conf.occupy[selection.occupy_index]
+        } else {
+            asset.conf.occupy[selection.occupy_index] + IVec2::new(y_mod, 0)
+        };
+        let target = ufo.position - diff;
+
+        if (target.x < 0 || target.x >= grid.size.0 as i32)
+            || (target.y < 0 || target.y >= grid.size.1 as i32)
+        {
+            return;
+        }
 
         let world_position = grid.cell_to_world(UVec2::new(target.x as u32, target.y as u32));
         let order = grid.cell_order(UVec2::new(target.x as u32, target.y as u32));
@@ -540,7 +555,7 @@ fn handle_ufo_lift_event(
     for (entity, obj) in &mut obj_query {
         let mut occupy_index = -1;
         for (i, occupy) in obj.occupied.iter().enumerate() {
-            if !*occupy == event.position {
+            if *occupy != event.position {
                 continue;
             }
 
