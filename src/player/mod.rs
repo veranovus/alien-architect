@@ -304,7 +304,7 @@ fn handle_ufo_lift_event(
         event_writer.send(TileStateChangeEvent::new(ufo.position, TileState::Default));
 
         // Set TileState to Selected for every valid position
-        let valid = object::find_valid_cells(obj.id, event.position, &oas, &world, &grid);
+        let valid = object::find_valid_cells(entity, obj.id, event.position, &oas, &world, &grid);
         for cell in valid {
             event_writer.send(TileStateChangeEvent::new(cell, TileState::Selected));
         }
@@ -353,7 +353,7 @@ fn handle_ufo_drop_event(
         }
 
         let asset = oas.get(obj.id);
-        let valid = object::find_valid_cells(obj.id, obj.occupied[0], &oas, &world, &grid);
+        let valid = object::find_valid_cells(entity, obj.id, obj.occupied[0], &oas, &world, &grid);
 
         // Calculate Object's position
         let target = calculate_object_poition(&ufo, selection, asset);

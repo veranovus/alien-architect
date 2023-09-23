@@ -217,6 +217,7 @@ fn update_object_image(
  */
 
 pub fn find_valid_cells(
+    entity: Entity,
     id: ObjectID,
     position: IVec2,
     oas: &ObjectAssetServer,
@@ -314,7 +315,64 @@ pub fn find_valid_cells(
             vec![]
         }
         ObjectID::Church => {
-            vec![]
+            let asset = oas.get(ObjectID::Church);
+
+            let mut valid = vec![];
+
+            for i in 0..(grid.size.0 * grid.size.1) {
+                let position = IVec2::new((i % grid.size.0) as i32, (i / grid.size.0) as i32);
+                let y_mod = position.y % 2;
+
+                let mut found = true;
+
+                for (i, offset) in asset.conf.occupy.iter().enumerate() {
+                    // Recalculate position for every occupied cell
+                    let current = IVec2::new(
+                        position.x + (if i == 0 { offset.x } else { offset.x + y_mod }),
+                        position.y + offset.y,
+                    );
+
+                    if (current.x < 0 || current.x >= grid.size.0 as i32)
+                        || (current.y < 0 || current.y >= grid.size.1 as i32)
+                    {
+                        found = false;
+                        break;
+                    }
+
+                    // If the current tile is not valid or occupied return 0
+                    let index = ((current.y * world.size.0 as i32) + current.x) as usize;
+
+                    if grid.grid[index] == 0 {
+                        found = false;
+                        break;
+                    }
+
+                    match world.objects[index] {
+                        Some((target_entity, _)) => {
+                            if target_entity == entity {
+                                continue;
+                            }
+
+                            found = false;
+                            break;
+                        }
+                        None => {
+                            continue;
+                        }
+                    }
+                }
+
+                if found {
+                    for (i, cell) in asset.conf.occupy.iter().enumerate() {
+                        valid.push(IVec2::new(
+                            position.x + (if i == 0 { cell.x } else { cell.x + y_mod }),
+                            position.y + cell.y,
+                        ));
+                    }
+                }
+            }
+
+            valid
         }
         ObjectID::Tavern => {
             let asset = oas.get(ObjectID::Tavern);
