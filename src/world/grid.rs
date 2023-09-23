@@ -15,7 +15,9 @@ impl Plugin for GridPlugin {
 const GRID_SIZE: (u32, u32) = (5, 9);
 
 const GRID_OFFET: (i32, i32) = (-5, 35);
+
 const CELL_SIZE: (u32, u32) = (30, 18);
+
 const CELL_OFFSET: (u32, u32) = (2, 4);
 
 /************************************************************
