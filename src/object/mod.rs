@@ -216,7 +216,13 @@ fn update_object_image(
  * - Helper Functions
  */
 
-pub fn find_valid_cells(id: ObjectID, position: IVec2, world: &World, grid: &Grid) -> Vec<IVec2> {
+pub fn find_valid_cells(
+    id: ObjectID,
+    position: IVec2,
+    oas: &ObjectAssetServer,
+    world: &World,
+    grid: &Grid,
+) -> Vec<IVec2> {
     return match id {
         ObjectID::Villager => {
             vec![]
@@ -279,7 +285,22 @@ pub fn find_valid_cells(id: ObjectID, position: IVec2, world: &World, grid: &Gri
             valid
         }
         ObjectID::Farm => {
-            vec![]
+            let asset = oas.get(ObjectID::Farm);
+
+            let mut valid = vec![];
+
+            for i in 0..(grid.size.0 * grid.size.1) {
+                let position = IVec2::new((i % grid.size.0) as i32, (i / grid.size.0) as i32);
+
+                let count =
+                    count_neighbour_id(ObjectID::Field, position, &asset.conf.occupy, world, grid);
+
+                if count >= 2 {
+                    valid.push(position);
+                }
+            }
+
+            valid
         }
         ObjectID::Tower => {
             vec![]
@@ -288,7 +309,22 @@ pub fn find_valid_cells(id: ObjectID, position: IVec2, world: &World, grid: &Gri
             vec![]
         }
         ObjectID::Tavern => {
-            vec![]
+            let asset = oas.get(ObjectID::Tavern);
+
+            let mut valid = vec![];
+
+            for i in 0..(grid.size.0 * grid.size.1) {
+                let position = IVec2::new((i % grid.size.0) as i32, (i / grid.size.0) as i32);
+
+                let count =
+                    count_neighbour_id(ObjectID::House, position, &asset.conf.occupy, world, grid);
+
+                if count >= 4 {
+                    valid.push(position);
+                }
+            }
+
+            valid
         }
         _ => panic!("Can't find valid cells for immobile {}.", id.to_string()),
     };
@@ -307,4 +343,78 @@ fn get_adjected(position: IVec2) -> [(i32, i32); 9] {
         (-1 + y_mod, 1),
         (-1 + y_mod, -1),
     ];
+}
+
+fn count_neighbour_id(
+    id: ObjectID,
+    position: IVec2,
+    offsets: &Vec<IVec2>,
+    world: &World,
+    grid: &Grid,
+) -> usize {
+    let y_mod = position.y % 2;
+
+    let mut count = 0;
+
+    for (i, offset) in offsets.iter().enumerate() {
+        // Recalculate position for every occupied cell
+        let current = IVec2::new(
+            position.x + (if i == 0 { offset.x } else { offset.x + y_mod }),
+            position.y + offset.y,
+        );
+
+        if (current.x < 0 || current.x >= grid.size.0 as i32)
+            || (current.y < 0 || current.y >= grid.size.1 as i32)
+        {
+            break;
+        }
+
+        // If the current tile is occupied continue
+        let index = ((current.y * world.size.0 as i32) + current.x) as usize;
+
+        if !world.objects[index].is_none() {
+            break;
+        }
+
+        // Check the adjacted cells for current cell
+        let adjected = get_adjected(current);
+        for (x, y) in adjected {
+            let target = IVec2::new(position.x + x, position.y + y);
+
+            if (target.x < 0 || target.x >= grid.size.0 as i32)
+                || (target.y < 0 || target.y >= grid.size.1 as i32)
+            {
+                continue;
+            }
+
+            let index = ((target.y * world.size.0 as i32) + target.x) as usize;
+
+            if grid.grid[index] == 0 {
+                continue;
+            }
+
+            // Check if target is a desired Object, if so calculate points
+            match world.objects[index] {
+                Some((_, target_id)) => {
+                    // House and BigHouse are the same just the points are different.
+                    if let ObjectID::House = id {
+                        if target_id == id {
+                            count += 1;
+                        } else if target_id == ObjectID::BigHouse {
+                            count += 2;
+                        }
+                    }
+                    // Otherwise calculate points the normal way
+                    else {
+                        if target_id == id {
+                            count += 1;
+                        }
+                    }
+                }
+                None => continue,
+            }
+        }
+    }
+
+    return count;
 }
