@@ -54,6 +54,7 @@ impl Grid {
             - (index % self.size.0 + (index / self.size.0 * self.size.0));
     }
 
+    // TODO: Change `Grid::cell_to_world` to be able to calculate i32 values.
     pub fn cell_to_world(&self, pos: UVec2) -> Vec2 {
         return Vec2::new(
             (pos.x * (self.cell_size.0 - self.cell_offset.0)) as f32

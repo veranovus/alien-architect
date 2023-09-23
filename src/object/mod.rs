@@ -31,33 +31,6 @@ pub struct ObjectDesc {
     pub position: UVec2,
 }
 
-#[allow(dead_code)]
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Component, Serialize, Deserialize)]
-pub enum ObjectID {
-    None,
-    // Entity IDs
-    King,
-    Villager,
-    Cow,
-    Assassin,
-    // Building IDs
-    Castle,
-    Mountain,
-    Field,
-    House,
-    BigHouse,
-    Farm,
-    Tower,
-    Church,
-    Tavern,
-}
-
-impl fmt::Display for ObjectID {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
 #[derive(Debug, Event)]
 pub struct ObjectSelectEvent {
     position: IVec2,
@@ -89,6 +62,33 @@ impl Animated {
     }
 }
 
+#[allow(dead_code)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Component, Serialize, Deserialize)]
+pub enum ObjectID {
+    None,
+    // Entity IDs
+    King,
+    Villager,
+    Cow,
+    Assassin,
+    // Building IDs
+    Castle,
+    Mountain,
+    Field,
+    House,
+    BigHouse,
+    Farm,
+    Tower,
+    Church,
+    Tavern,
+}
+
+impl fmt::Display for ObjectID {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 #[derive(Debug, Component)]
 pub struct Object {
     pub id: ObjectID,
@@ -107,6 +107,7 @@ impl Object {
     ) -> Entity {
         let asset = oas.get(id);
 
+        // Calculate Object's occupied tiles
         let y_mod = position.y % 2;
         let world_position = grid.cell_to_world(position);
 
@@ -123,6 +124,7 @@ impl Object {
             ));
         }
 
+        // Create the Object
         let entity = commands
             .spawn((
                 SpriteBundle {
@@ -149,10 +151,12 @@ impl Object {
             ))
             .id();
 
+        // Give object Selectable property
         if asset.conf.selectable {
             commands.entity(entity).insert(Selectable::new());
         }
 
+        // Give object Animated property
         if asset.conf.animated {
             commands.entity(entity).insert(Animated::new());
         }
@@ -166,13 +170,13 @@ impl Object {
  */
 
 fn handle_select_object_event(
+    mut query: Query<(&Object, &mut Selectable)>,
     mut event_reader: EventReader<ObjectSelectEvent>,
-    mut query: Query<(Entity, &Object, &mut Selectable)>,
 ) {
     for e in event_reader.iter() {
         let mut selected = false;
 
-        for (entity, obj, mut selectable) in &mut query {
+        for (obj, mut selectable) in &mut query {
             if obj.occupied.contains(&e.position) && !selected {
                 selectable.selected = true;
 
@@ -201,14 +205,6 @@ fn update_object_image(
 /************************************************************
  * - Helper Functions
  */
-
-pub fn move_object(
-    target: IVec2,
-    object: &mut Object,
-    transform: &mut Transform,
-    oas: &ObjectAssetServer,
-) {
-}
 
 pub fn find_valid_cells(id: ObjectID, position: IVec2, world: &World, grid: &Grid) -> Vec<IVec2> {
     return match id {
@@ -268,13 +264,3 @@ pub fn find_valid_cells(id: ObjectID, position: IVec2, world: &World, grid: &Gri
         _ => panic!("Can't find valid cells for immobile {}.", id.to_string()),
     };
 }
-
-/************************************************************
- * - Notes
- *
- * UFO -> Sends select event, with UFO's position.
- * Check every selectable object's occupied areas.
- * IF T -> Cache relative position difference, set selected.
- *      -> UFO's in selected mode, send change pos every time it moves.
- * IF N -> Send non-selectable event as response to UFO.
- */

@@ -1,16 +1,10 @@
 use crate::object::asset::{ObjectAsset, ObjectAssetServer};
-use crate::object::{find_valid_cells, Object, ObjectSelectEvent, Selectable};
+use crate::object::{self, Object, ObjectSelectEvent, Selectable};
 use crate::world::tile::{TileState, TileStateChangeEvent};
 use crate::world::{grid::Grid, World};
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
-
-/* TODO: Version 0.2.2
- *      - [_] Change `Grid::cell_to_world` to be able to calculate i32 values.
- *      - [_] Implement system for valid tiles to show when carrying Object.
- *      - [_] Implemet `UFODropEvent` and placeing objects to valid tiles.
- */
 
 pub struct PlayerPlugin;
 
@@ -176,8 +170,6 @@ fn control_ufo(
     // Lift & Drop
     if keys.just_pressed(KeyCode::H) {
         if ufo.selected.is_none() {
-            tile_event_writer.send(TileStateChangeEvent::new(ufo.position, TileState::Default));
-
             objc_event_writer.send(ObjectSelectEvent::new(ufo.position));
 
             lift_event_writer.send(UFOLiftEvent::new(ufo.position));
@@ -307,7 +299,11 @@ fn handle_ufo_lift_event(
             continue;
         }
 
-        let valid = find_valid_cells(obj.id, event.position, &world, &grid);
+        // Clear the TileState for tile UFO is hovering
+        event_writer.send(TileStateChangeEvent::new(ufo.position, TileState::Default));
+
+        // Set TileState to Selected for every valid position
+        let valid = object::find_valid_cells(obj.id, event.position, &world, &grid);
         for cell in valid {
             event_writer.send(TileStateChangeEvent::new(cell, TileState::Selected));
         }
@@ -356,7 +352,7 @@ fn handle_ufo_drop_event(
         }
 
         let asset = oas.get(obj.id);
-        let valid = find_valid_cells(obj.id, obj.occupied[0], &world, &grid);
+        let valid = object::find_valid_cells(obj.id, obj.occupied[0], &world, &grid);
 
         // Calculate Object's position
         let target = calculate_object_poition(&ufo, selection, asset);
@@ -383,7 +379,7 @@ fn handle_ufo_drop_event(
             }
         }
 
-        // Clear Selected tiles, except the tile UFO is hovering.
+        // Clear TileState of currently Selected tiles, except the tile UFO is hovering.
         for cell in valid {
             if cell == ufo.position {
                 continue;
