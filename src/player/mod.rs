@@ -1,10 +1,16 @@
-use crate::object::asset::ObjectAssetServer;
-use crate::object::{find_valid_cells, Object, ObjectID, ObjectSelectEvent, Selectable};
+use crate::object::asset::{ObjectAsset, ObjectAssetServer};
+use crate::object::{find_valid_cells, Object, ObjectSelectEvent, Selectable};
 use crate::world::tile::{TileState, TileStateChangeEvent};
 use crate::world::{grid::Grid, World};
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
+
+/* TODO: Version 0.2.2
+ *      - [_] Change `Grid::cell_to_world` to be able to calculate i32 values.
+ *      - [_] Implement system for valid tiles to show when carrying Object.
+ *      - [_] Implemet `UFODropEvent` and placeing objects to valid tiles.
+ */
 
 pub struct PlayerPlugin;
 
@@ -13,7 +19,7 @@ impl Plugin for PlayerPlugin {
         app.add_event::<UFODropEvent>()
             .add_event::<UFOLiftEvent>()
             .add_systems(Update, (control_ufo, ufo_carry_object))
-            .add_systems(PostUpdate, handle_ufo_lift_event);
+            .add_systems(PostUpdate, (handle_ufo_lift_event, handle_ufo_drop_event));
     }
 }
 
@@ -58,13 +64,11 @@ impl UFOLiftEvent {
 }
 
 #[derive(Debug, Event)]
-pub struct UFODropEvent {
-    position: IVec2,
-}
+pub struct UFODropEvent {}
 
 impl UFODropEvent {
-    pub fn new(position: IVec2) -> Self {
-        Self { position }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 
@@ -172,11 +176,13 @@ fn control_ufo(
     // Lift & Drop
     if keys.just_pressed(KeyCode::H) {
         if ufo.selected.is_none() {
+            tile_event_writer.send(TileStateChangeEvent::new(ufo.position, TileState::Default));
+
             objc_event_writer.send(ObjectSelectEvent::new(ufo.position));
 
             lift_event_writer.send(UFOLiftEvent::new(ufo.position));
         } else {
-            drop_event_writer.send(UFODropEvent::new(ufo.position));
+            drop_event_writer.send(UFODropEvent::new());
         }
     }
 
@@ -184,13 +190,11 @@ fn control_ufo(
         let t = ufo.position;
         let moved = ufo_move(position, &mut ufo, &mut transform, &grid);
 
-        if moved {
+        if moved && ufo.selected.is_none() {
             tile_event_writer.send(TileStateChangeEvent::new(t, TileState::Default));
             tile_event_writer.send(TileStateChangeEvent::new(ufo.position, TileState::Selected));
 
-            if ufo.selected.is_none() {
-                objc_event_writer.send(ObjectSelectEvent::new(ufo.position));
-            }
+            objc_event_writer.send(ObjectSelectEvent::new(ufo.position));
         }
     }
 }
@@ -245,14 +249,7 @@ fn ufo_carry_object(
         }
 
         let asset = oas.get(obj.id);
-
-        let y_mod = (ufo.position.y + 1) % 2;
-        let diff = if selection.occupy_index == 0 {
-            asset.conf.occupy[selection.occupy_index]
-        } else {
-            asset.conf.occupy[selection.occupy_index] + IVec2::new(y_mod, 0)
-        };
-        let target = ufo.position - diff;
+        let target = calculate_object_poition(ufo, selection, asset);
 
         if (target.x < 0 || target.x >= grid.size.0 as i32)
             || (target.y < 0 || target.y >= grid.size.1 as i32)
@@ -312,4 +309,101 @@ fn handle_ufo_lift_event(
     }
 }
 
-fn hande_ufo_drop_event() {}
+fn handle_ufo_drop_event(
+    mut ufo_query: Query<&mut UFO>,
+    mut obj_query: Query<(Entity, &mut Object, &mut Transform), With<Selectable>>,
+    mut event_reader: EventReader<UFODropEvent>,
+    oas: Res<ObjectAssetServer>,
+    world: Res<World>,
+    grid: Res<Grid>,
+) {
+    // Validate ER
+    if event_reader.len() > 1 {
+        panic!("Encountered unhandled UFOLiftEvent.");
+    }
+    if event_reader.is_empty() {
+        return;
+    }
+
+    event_reader.clear();
+
+    // Get UFO
+    let mut ufo = match ufo_query.get_single_mut() {
+        Ok(tuple) => tuple,
+        Err(QuerySingleError::MultipleEntities(_)) => {
+            panic!("Multiple UFOs are present in the scene.")
+        }
+        Err(QuerySingleError::NoEntities(_)) => return,
+    };
+
+    let selection = match &ufo.selected {
+        Some(selection) => selection,
+        None => panic!("UFO haven't selected any object but, UFODropEvent is called."),
+    };
+
+    for (entity, mut obj, mut transform) in &mut obj_query {
+        if entity != selection.entity {
+            continue;
+        }
+
+        let asset = oas.get(obj.id);
+        let valid = find_valid_cells(obj.id, obj.occupied[0], &world, &grid);
+
+        // Calculate Object's position
+        let target = calculate_object_poition(&ufo, selection, asset);
+        let y_mod = target.y % 2;
+
+        // Calculate Object's possible new occupied territory
+        let mut occupied = vec![];
+        for (i, offset) in asset.conf.occupy.iter().enumerate() {
+            occupied.push(IVec2::new(
+                target.x as i32
+                    + (if i == 0 {
+                        offset.x
+                    } else {
+                        offset.x + y_mod as i32
+                    }),
+                target.y as i32 + offset.y,
+            ));
+        }
+
+        // Validate Object's new position
+        for cell in &occupied {
+            if !valid.contains(cell) {
+                return;
+            }
+        }
+
+        // Set Object's new position
+        obj.occupied = occupied;
+
+        let world_position = grid.cell_to_world(UVec2::new(target.x as u32, target.y as u32));
+        let order = grid.cell_order(UVec2::new(target.x as u32, target.y as u32));
+
+        transform.translation.x = world_position.x + obj.offset.x as f32;
+        transform.translation.y = world_position.y + obj.offset.y as f32;
+        transform.translation.z = 100.0 + order as f32;
+
+        // Set UFO's selected to None
+        ufo.selected = None;
+
+        // Break is mandatory for borrow checker
+        break;
+    }
+}
+
+/************************************************************
+ * - Helper Functions
+ */
+
+fn calculate_object_poition(ufo: &UFO, selection: &UFOSelection, asset: &ObjectAsset) -> IVec2 {
+    let y_mod = (ufo.position.y + 1) % 2;
+
+    let diff = if selection.occupy_index == 0 {
+        asset.conf.occupy[selection.occupy_index]
+    } else {
+        asset.conf.occupy[selection.occupy_index] + IVec2::new(y_mod, 0)
+    };
+
+    return ufo.position - diff;
+}
