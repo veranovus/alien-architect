@@ -269,7 +269,10 @@ fn ufo_carry_object(
 fn handle_ufo_lift_event(
     mut ufo_query: Query<&mut UFO>,
     mut obj_query: Query<(Entity, &Object), With<Selectable>>,
+    mut event_writer: EventWriter<TileStateChangeEvent>,
     mut event_reader: EventReader<UFOLiftEvent>,
+    world: Res<World>,
+    grid: Res<Grid>,
 ) {
     // Validate ER
     if event_reader.len() > 1 {
@@ -304,6 +307,11 @@ fn handle_ufo_lift_event(
             continue;
         }
 
+        let valid = find_valid_cells(obj.id, event.position, &world, &grid);
+        for cell in valid {
+            event_writer.send(TileStateChangeEvent::new(cell, TileState::Selected));
+        }
+
         ufo.selected = Some(UFOSelection::new(entity, occupy_index as usize));
         break;
     }
@@ -312,6 +320,7 @@ fn handle_ufo_lift_event(
 fn handle_ufo_drop_event(
     mut ufo_query: Query<&mut UFO>,
     mut obj_query: Query<(Entity, &mut Object, &mut Transform), With<Selectable>>,
+    mut event_writer: EventWriter<TileStateChangeEvent>,
     mut event_reader: EventReader<UFODropEvent>,
     oas: Res<ObjectAssetServer>,
     world: Res<World>,
@@ -372,6 +381,15 @@ fn handle_ufo_drop_event(
             if !valid.contains(cell) {
                 return;
             }
+        }
+
+        // Clear Selected tiles, except the tile UFO is hovering.
+        for cell in valid {
+            if cell == ufo.position {
+                continue;
+            }
+
+            event_writer.send(TileStateChangeEvent::new(cell, TileState::Default));
         }
 
         // Set Object's new position
