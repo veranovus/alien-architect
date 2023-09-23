@@ -226,65 +226,58 @@ pub fn find_valid_cells(
 ) -> Vec<IVec2> {
     return match id {
         ObjectID::Villager => {
-            vec![]
+            let mut valid = vec![];
+
+            for i in 0..(grid.size.0 * grid.size.1) {
+                let position = IVec2::new((i % grid.size.0) as i32, (i / grid.size.0) as i32);
+
+                // Validate current position
+                let (valid_position, index) = validate_position(position, grid);
+
+                if !valid_position {
+                    continue;
+                }
+
+                // If target position is empty or a farm push it as a valid position
+                match world.objects[index] {
+                    Some((_, target_id)) => match target_id {
+                        ObjectID::House | ObjectID::BigHouse => valid.push(position),
+                        _ => {}
+                    },
+                    None => valid.push(position),
+                }
+            }
+
+            valid
         }
         ObjectID::Cow => {
-            vec![]
-        }
-        ObjectID::House => {
-            let adjected = get_adjected(position);
-
             let mut valid = vec![];
-            for (x, y) in adjected {
-                let target = IVec2::new(position.x + x, position.y + y);
 
-                if (target.x < 0 || target.x >= grid.size.0 as i32)
-                    || (target.y < 0 || target.y >= grid.size.1 as i32)
-                {
+            for i in 0..(grid.size.0 * grid.size.1) {
+                let position = IVec2::new((i % grid.size.0) as i32, (i / grid.size.0) as i32);
+
+                // Validate current position
+                let (valid_position, index) = validate_position(position, grid);
+
+                if !valid_position {
                     continue;
                 }
 
-                let index = ((target.y * world.size.0 as i32) + target.x) as usize;
-
-                if grid.grid[index] == 0 {
-                    continue;
+                // If target position is empty or a farm push it as a valid position
+                match world.objects[index] {
+                    Some((_, target_id)) => {
+                        if let ObjectID::Farm = target_id {
+                            valid.push(position);
+                        }
+                    }
+                    None => valid.push(position),
                 }
-                if !(world.objects[index].is_none() || (x == 0 && y == 0)) {
-                    continue;
-                }
-
-                valid.push(target);
             }
 
             valid
         }
-        ObjectID::BigHouse => {
-            let adjected = get_adjected(position);
-
-            let mut valid = vec![];
-            for (x, y) in adjected {
-                let target = IVec2::new(position.x + x, position.y + y);
-
-                if (target.x < 0 || target.x >= grid.size.0 as i32)
-                    || (target.y < 0 || target.y >= grid.size.1 as i32)
-                {
-                    continue;
-                }
-
-                let index = ((target.y * world.size.0 as i32) + target.x) as usize;
-
-                if grid.grid[index] == 0 {
-                    continue;
-                }
-                if !(world.objects[index].is_none() || (x == 0 && y == 0)) {
-                    continue;
-                }
-
-                valid.push(target);
-            }
-
-            valid
-        }
+        ObjectID::House => valid_tiles_for_adjacted_rule(position, world, grid),
+        ObjectID::BigHouse => valid_tiles_for_adjacted_rule(position, world, grid),
         ObjectID::Farm => valid_tiles_for_n_number_of_neighbour_rule(
             entity,
             ObjectID::Farm,
@@ -295,7 +288,96 @@ pub fn find_valid_cells(
             grid,
         ),
         ObjectID::Tower => {
-            vec![]
+            let mut valid = vec![];
+            let mut castle = IVec2::ZERO;
+
+            for i in 0..(grid.size.0 * grid.size.1) {
+                let position = IVec2::new((i % grid.size.0) as i32, (i / grid.size.0) as i32);
+
+                // Validate current position
+                let (valid, index) = validate_position(position, grid);
+
+                if !valid {
+                    continue;
+                }
+
+                if let Some((_, id)) = world.objects[index] {
+                    if let ObjectID::Castle = id {
+                        castle = position;
+                        break;
+                    }
+                }
+            }
+
+            let x_mod = castle.x % 2;
+
+            for i in 0..grid.size.1 as i32 {
+                {
+                    let x = (castle.x - (castle.y / 2)) + (i / 2);
+
+                    let position = IVec2::new(x, i);
+
+                    // Validate current position
+                    let (valid_position, index) = validate_position(position, grid);
+
+                    let mut valid_pos = true;
+
+                    if !valid_position {
+                        valid_pos = false;
+                    }
+
+                    match world.objects[index] {
+                        Some((target_entity, _)) => {
+                            if target_entity != entity {
+                                valid_pos = false;
+                            }
+                        }
+                        None => {}
+                    }
+
+                    if valid_pos {
+                        valid.push(position);
+                    }
+                }
+
+                {
+                    let mut x: i32 =
+                        (castle.x - ((grid.size.1 as i32 - castle.y) / 2)) + i as i32 / 2;
+                    let y: i32 =
+                        (grid.size.1 as i32 - castle.x - ((grid.size.1 as i32 - castle.y) / 2))
+                            + i as i32;
+
+                    if x < 0 {
+                        x = 0;
+                    }
+
+                    let position = IVec2::new(x, y);
+
+                    println!("POSITION : {}", position);
+
+                    // Validate current position
+                    let (valid_position, index) = validate_position(position, grid);
+
+                    if !valid_position {
+                        continue;
+                    }
+
+                    match world.objects[index] {
+                        Some((target_entity, _)) => {
+                            if target_entity != entity {
+                                continue;
+                            }
+                        }
+                        None => {}
+                    }
+
+                    println!("NOT SKIPPED");
+
+                    valid.push(position);
+                }
+            }
+
+            valid
         }
         ObjectID::Church => {
             let asset = oas.get(ObjectID::Church);
@@ -483,6 +565,10 @@ fn count_neighbour_id(
     return count;
 }
 
+/************************************************************
+ * Object Rules
+ */
+
 fn valid_tiles_for_n_number_of_neighbour_rule(
     entity: Entity,
     self_id: ObjectID,
@@ -513,6 +599,34 @@ fn valid_tiles_for_n_number_of_neighbour_rule(
                 ));
             }
         }
+    }
+
+    valid
+}
+
+fn valid_tiles_for_adjacted_rule(position: IVec2, world: &World, grid: &Grid) -> Vec<IVec2> {
+    let adjected = get_adjected(position);
+
+    let mut valid = vec![];
+    for (x, y) in adjected {
+        let target = IVec2::new(position.x + x, position.y + y);
+
+        if (target.x < 0 || target.x >= grid.size.0 as i32)
+            || (target.y < 0 || target.y >= grid.size.1 as i32)
+        {
+            continue;
+        }
+
+        let index = ((target.y * world.size.0 as i32) + target.x) as usize;
+
+        if grid.grid[index] == 0 {
+            continue;
+        }
+        if !(world.objects[index].is_none() || (x == 0 && y == 0)) {
+            continue;
+        }
+
+        valid.push(target);
     }
 
     valid
