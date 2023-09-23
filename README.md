@@ -33,3 +33,4 @@ Super cool puzzle games about managing space and aliens!
 - `v0.2.0`: Implemented `Object` selection.
 - `v0.2.1`: Refactored `UFO` movement, and `UFO` object selection.
 - `v0.2.1`: Implemented `UFOLiftEvent`, which is used to make UFO carry what its hovering.
+- `v0.2.2`: Implemented `UFODropEvent`, and tile visualization for valid drop locations.
