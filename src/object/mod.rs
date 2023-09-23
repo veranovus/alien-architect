@@ -202,10 +202,12 @@ fn update_object_image(
     oas: Res<ObjectAssetServer>,
 ) {
     for (obj, selectable, mut handle) in &mut query {
-        if selectable.selected {
-            *handle = oas.get(obj.id).assets[1].clone();
+        let asset = oas.get(obj.id);
+
+        if selectable.selected && asset.assets.len() > 1 {
+            *handle = asset.assets[1].clone();
         } else {
-            *handle = oas.get(obj.id).assets[0].clone();
+            *handle = asset.assets[0].clone();
         }
     }
 }

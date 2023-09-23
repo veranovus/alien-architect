@@ -34,3 +34,10 @@ Super cool puzzle games about managing space and aliens!
 - `v0.2.1`: Refactored `UFO` movement, and `UFO` object selection.
 - `v0.2.1`: Implemented `UFOLiftEvent`, which is used to make UFO carry what its hovering.
 - `v0.2.2`: Implemented `UFODropEvent`, and tile visualization for valid drop locations.
+- `v0.2.3`: Fixed a bug causing `Object`'s to only register their initial cell to world.
+- `v0.2.3`: `Object`'s now update their posiitons in World when they are moved.
+- `v0.2.3`: Fixed a bug which occured when a Selectable object had less than 2 sprites.
+
+# Update
+- Change `Grid`'s `cell_to_world` function from `u32` to `i32` to account for negative positions.
+
