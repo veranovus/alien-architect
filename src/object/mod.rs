@@ -292,11 +292,19 @@ pub fn find_valid_cells(
             for i in 0..(grid.size.0 * grid.size.1) {
                 let position = IVec2::new((i % grid.size.0) as i32, (i / grid.size.0) as i32);
 
+                // Count the neighbours for current position
                 let count =
                     count_neighbour_id(ObjectID::Field, position, &asset.conf.occupy, world, grid);
 
                 if count >= 2 {
-                    valid.push(position);
+                    // Push every tile Objet can occupy as a valid one
+                    let y_mod = position.y % 2;
+                    for (i, cell) in asset.conf.occupy.iter().enumerate() {
+                        valid.push(IVec2::new(
+                            position.x + (if i == 0 { cell.x } else { cell.x + y_mod }),
+                            position.y + cell.y,
+                        ));
+                    }
                 }
             }
 
@@ -316,11 +324,19 @@ pub fn find_valid_cells(
             for i in 0..(grid.size.0 * grid.size.1) {
                 let position = IVec2::new((i % grid.size.0) as i32, (i / grid.size.0) as i32);
 
+                // Count the neighbours for current position
                 let count =
                     count_neighbour_id(ObjectID::House, position, &asset.conf.occupy, world, grid);
 
                 if count >= 4 {
-                    valid.push(position);
+                    // Push every tile Objet can occupy as a valid one
+                    let y_mod = position.y % 2;
+                    for (i, cell) in asset.conf.occupy.iter().enumerate() {
+                        valid.push(IVec2::new(
+                            position.x + (if i == 0 { cell.x } else { cell.x + y_mod }),
+                            position.y + cell.y,
+                        ));
+                    }
                 }
             }
 
@@ -366,14 +382,18 @@ fn count_neighbour_id(
         if (current.x < 0 || current.x >= grid.size.0 as i32)
             || (current.y < 0 || current.y >= grid.size.1 as i32)
         {
-            break;
+            return 0;
         }
 
-        // If the current tile is occupied continue
+        // If the current tile is not valid or occupied return 0
         let index = ((current.y * world.size.0 as i32) + current.x) as usize;
 
+        if grid.grid[index] == 0 {
+            return 0;
+        }
+
         if !world.objects[index].is_none() {
-            break;
+            return 0;
         }
 
         // Check the adjacted cells for current cell
