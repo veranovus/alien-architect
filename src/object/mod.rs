@@ -285,32 +285,15 @@ pub fn find_valid_cells(
 
             valid
         }
-        ObjectID::Farm => {
-            let asset = oas.get(ObjectID::Farm);
-
-            let mut valid = vec![];
-
-            for i in 0..(grid.size.0 * grid.size.1) {
-                let position = IVec2::new((i % grid.size.0) as i32, (i / grid.size.0) as i32);
-
-                // Count the neighbours for current position
-                let count =
-                    count_neighbour_id(ObjectID::Field, position, &asset.conf.occupy, world, grid);
-
-                if count >= 2 {
-                    // Push every tile Objet can occupy as a valid one
-                    let y_mod = position.y % 2;
-                    for (i, cell) in asset.conf.occupy.iter().enumerate() {
-                        valid.push(IVec2::new(
-                            position.x + (if i == 0 { cell.x } else { cell.x + y_mod }),
-                            position.y + cell.y,
-                        ));
-                    }
-                }
-            }
-
-            valid
-        }
+        ObjectID::Farm => valid_tiles_for_n_number_of_neighbour_rule(
+            entity,
+            ObjectID::Farm,
+            ObjectID::Field,
+            2,
+            oas,
+            world,
+            grid,
+        ),
         ObjectID::Tower => {
             vec![]
         }
@@ -326,23 +309,16 @@ pub fn find_valid_cells(
                 let mut found = true;
 
                 for (i, offset) in asset.conf.occupy.iter().enumerate() {
-                    // Recalculate position for every occupied cell
+                    // Calculate position for every cell that Object will occupy
                     let current = IVec2::new(
                         position.x + (if i == 0 { offset.x } else { offset.x + y_mod }),
                         position.y + offset.y,
                     );
 
-                    if (current.x < 0 || current.x >= grid.size.0 as i32)
-                        || (current.y < 0 || current.y >= grid.size.1 as i32)
-                    {
-                        found = false;
-                        break;
-                    }
+                    // Validate current position
+                    let (valid, index) = validate_position(current, &grid);
 
-                    // If the current tile is not valid or occupied return 0
-                    let index = ((current.y * world.size.0 as i32) + current.x) as usize;
-
-                    if grid.grid[index] == 0 {
+                    if !valid {
                         found = false;
                         break;
                     }
@@ -362,44 +338,32 @@ pub fn find_valid_cells(
                     }
                 }
 
+                // If a valid position is found push every tile that Object may occupy
                 if found {
                     for (i, cell) in asset.conf.occupy.iter().enumerate() {
-                        valid.push(IVec2::new(
+                        let position = IVec2::new(
                             position.x + (if i == 0 { cell.x } else { cell.x + y_mod }),
                             position.y + cell.y,
-                        ));
+                        );
+
+                        if !valid.contains(&position) {
+                            valid.push(position);
+                        }
                     }
                 }
             }
 
             valid
         }
-        ObjectID::Tavern => {
-            let asset = oas.get(ObjectID::Tavern);
-
-            let mut valid = vec![];
-
-            for i in 0..(grid.size.0 * grid.size.1) {
-                let position = IVec2::new((i % grid.size.0) as i32, (i / grid.size.0) as i32);
-
-                // Count the neighbours for current position
-                let count =
-                    count_neighbour_id(ObjectID::House, position, &asset.conf.occupy, world, grid);
-
-                if count >= 4 {
-                    // Push every tile Objet can occupy as a valid one
-                    let y_mod = position.y % 2;
-                    for (i, cell) in asset.conf.occupy.iter().enumerate() {
-                        valid.push(IVec2::new(
-                            position.x + (if i == 0 { cell.x } else { cell.x + y_mod }),
-                            position.y + cell.y,
-                        ));
-                    }
-                }
-            }
-
-            valid
-        }
+        ObjectID::Tavern => valid_tiles_for_n_number_of_neighbour_rule(
+            entity,
+            ObjectID::Tavern,
+            ObjectID::House,
+            4,
+            oas,
+            world,
+            grid,
+        ),
         _ => panic!("Can't find valid cells for immobile {}.", id.to_string()),
     };
 }
@@ -419,7 +383,24 @@ fn get_adjected(position: IVec2) -> [(i32, i32); 9] {
     ];
 }
 
+fn validate_position(position: IVec2, grid: &Grid) -> (bool, usize) {
+    let index = ((position.y * grid.size.0 as i32) + position.x) as usize;
+
+    if (position.x < 0 || position.x >= grid.size.0 as i32)
+        || (position.y < 0 || position.y >= grid.size.1 as i32)
+    {
+        return (false, index);
+    }
+
+    if grid.grid[index] == 0 {
+        return (false, index);
+    }
+
+    return (true, index);
+}
+
 fn count_neighbour_id(
+    entity: Entity,
     id: ObjectID,
     position: IVec2,
     offsets: &Vec<IVec2>,
@@ -429,6 +410,8 @@ fn count_neighbour_id(
     let y_mod = position.y % 2;
 
     let mut count = 0;
+    // Store already counted positions, to not count them multiple times for different occupied spaces
+    let mut counted = vec![];
 
     for (i, offset) in offsets.iter().enumerate() {
         // Recalculate position for every occupied cell
@@ -437,21 +420,20 @@ fn count_neighbour_id(
             position.y + offset.y,
         );
 
-        if (current.x < 0 || current.x >= grid.size.0 as i32)
-            || (current.y < 0 || current.y >= grid.size.1 as i32)
-        {
+        // Validate the current position
+        let (valid, index) = validate_position(current, grid);
+
+        if !valid {
             return 0;
         }
 
-        // If the current tile is not valid or occupied return 0
-        let index = ((current.y * world.size.0 as i32) + current.x) as usize;
-
-        if grid.grid[index] == 0 {
-            return 0;
-        }
-
-        if !world.objects[index].is_none() {
-            return 0;
+        match world.objects[index] {
+            Some((target_entity, _)) => {
+                if target_entity != entity {
+                    return 0;
+                }
+            }
+            None => {}
         }
 
         // Check the adjacted cells for current cell
@@ -459,34 +441,38 @@ fn count_neighbour_id(
         for (x, y) in adjected {
             let target = IVec2::new(position.x + x, position.y + y);
 
-            if (target.x < 0 || target.x >= grid.size.0 as i32)
-                || (target.y < 0 || target.y >= grid.size.1 as i32)
-            {
+            // Validate the current position
+            let (valid, index) = validate_position(target, grid);
+
+            if !valid {
                 continue;
             }
 
-            let index = ((target.y * world.size.0 as i32) + target.x) as usize;
-
-            if grid.grid[index] == 0 {
+            // Check if this position is already counted
+            if counted.contains(&target) {
                 continue;
             }
 
             // Check if target is a desired Object, if so calculate points
             match world.objects[index] {
                 Some((_, target_id)) => {
-                    // House and BigHouse are the same just the points are different.
+                    // House and BigHouse are treated as the same building, just with different points
                     if let ObjectID::House = id {
                         if target_id == id {
                             count += 1;
                         } else if target_id == ObjectID::BigHouse {
                             count += 2;
                         }
+
+                        counted.push(target);
                     }
                     // Otherwise calculate points the normal way
                     else {
                         if target_id == id {
                             count += 1;
                         }
+
+                        counted.push(target);
                     }
                 }
                 None => continue,
@@ -495,4 +481,39 @@ fn count_neighbour_id(
     }
 
     return count;
+}
+
+fn valid_tiles_for_n_number_of_neighbour_rule(
+    entity: Entity,
+    self_id: ObjectID,
+    target_id: ObjectID,
+    required: usize,
+    oas: &ObjectAssetServer,
+    world: &World,
+    grid: &Grid,
+) -> Vec<IVec2> {
+    let asset = oas.get(self_id);
+
+    let mut valid = vec![];
+
+    for i in 0..(grid.size.0 * grid.size.1) {
+        let position = IVec2::new((i % grid.size.0) as i32, (i / grid.size.0) as i32);
+
+        // Count the neighbours for current position
+        let count =
+            count_neighbour_id(entity, target_id, position, &asset.conf.occupy, world, grid);
+
+        if count >= required {
+            // Push every tile Objet can occupy as a valid one
+            let y_mod = position.y % 2;
+            for (i, cell) in asset.conf.occupy.iter().enumerate() {
+                valid.push(IVec2::new(
+                    position.x + (if i == 0 { cell.x } else { cell.x + y_mod }),
+                    position.y + cell.y,
+                ));
+            }
+        }
+    }
+
+    valid
 }

@@ -37,6 +37,7 @@ Super cool puzzle games about managing space and aliens!
 - `v0.2.3`: Fixed a bug causing `Object`'s to only register their initial cell to world.
 - `v0.2.3`: `Object`'s now update their posiitons in World when they are moved.
 - `v0.2.3`: Fixed a bug which occured when a Selectable object had less than 2 sprites.
+- `v0.2.4`: Implemented movement rules, for every `Object`, except `Villager` and `Cow`.
 
 # Update
 - Change `Grid`'s `cell_to_world` function from `u32` to `i32` to account for negative positions.
