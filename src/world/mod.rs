@@ -105,9 +105,7 @@ pub fn generate_objects(
             }
         }
 
-        let index = ((od.position.y * world.size.0) + od.position.x) as usize;
-
-        world.objects[index] = Some((Object::new(od.id, od.position, grid, oas, commands), od.id));
+        Object::new(od.id, od.position, world, commands, grid, oas);
     }
 
     if !king | !castle {

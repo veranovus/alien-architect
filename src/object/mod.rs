@@ -101,9 +101,10 @@ impl Object {
     pub fn new(
         id: ObjectID,
         position: UVec2,
+        world: &mut World,
+        commands: &mut Commands,
         grid: &Grid,
         oas: &ObjectAssetServer,
-        commands: &mut Commands,
     ) -> Entity {
         let asset = oas.get(id);
 
@@ -142,7 +143,7 @@ impl Object {
                 },
                 Object {
                     id,
-                    occupied,
+                    occupied: occupied.clone(),
                     name: asset.conf.name.clone(),
                     offset: asset.conf.offset,
                 },
@@ -159,6 +160,13 @@ impl Object {
         // Give object Animated property
         if asset.conf.animated {
             commands.entity(entity).insert(Animated::new());
+        }
+
+        // Add object to world
+        for cell in occupied {
+            let index = ((cell.y * grid.size.0 as i32) + cell.x) as usize;
+
+            world.objects[index] = Some((entity, id));
         }
 
         return entity;
@@ -215,21 +223,10 @@ pub fn find_valid_cells(id: ObjectID, position: IVec2, world: &World, grid: &Gri
             vec![]
         }
         ObjectID::House => {
-            let even = position.y % 2;
-            let adjecteds: Vec<(i32, i32)> = vec![
-                (0, 0),
-                (0, 2),
-                (0, -2),
-                (1, 0),
-                (-1, 0),
-                (0 + even, 1),
-                (0 + even, -1),
-                (-1 + even, 1),
-                (-1 + even, -1),
-            ];
+            let adjected = get_adjected(position);
 
             let mut valid = vec![];
-            for (x, y) in adjecteds {
+            for (x, y) in adjected {
                 let target = IVec2::new(position.x + x, position.y + y);
 
                 if (target.x < 0 || target.x >= grid.size.0 as i32)
@@ -237,7 +234,13 @@ pub fn find_valid_cells(id: ObjectID, position: IVec2, world: &World, grid: &Gri
                 {
                     continue;
                 }
-                if grid.grid[((target.y * grid.size.0 as i32) + target.x) as usize] == 0 {
+
+                let index = ((target.y * world.size.0 as i32) + target.x) as usize;
+
+                if grid.grid[index] == 0 {
+                    continue;
+                }
+                if !(world.objects[index].is_none() || (x == 0 && y == 0)) {
                     continue;
                 }
 
@@ -247,7 +250,31 @@ pub fn find_valid_cells(id: ObjectID, position: IVec2, world: &World, grid: &Gri
             valid
         }
         ObjectID::BigHouse => {
-            vec![]
+            let adjected = get_adjected(position);
+
+            let mut valid = vec![];
+            for (x, y) in adjected {
+                let target = IVec2::new(position.x + x, position.y + y);
+
+                if (target.x < 0 || target.x >= grid.size.0 as i32)
+                    || (target.y < 0 || target.y >= grid.size.1 as i32)
+                {
+                    continue;
+                }
+
+                let index = ((target.y * world.size.0 as i32) + target.x) as usize;
+
+                if grid.grid[index] == 0 {
+                    continue;
+                }
+                if !(world.objects[index].is_none() || (x == 0 && y == 0)) {
+                    continue;
+                }
+
+                valid.push(target);
+            }
+
+            valid
         }
         ObjectID::Farm => {
             vec![]
@@ -263,4 +290,19 @@ pub fn find_valid_cells(id: ObjectID, position: IVec2, world: &World, grid: &Gri
         }
         _ => panic!("Can't find valid cells for immobile {}.", id.to_string()),
     };
+}
+
+fn get_adjected(position: IVec2) -> [(i32, i32); 9] {
+    let y_mod = position.y % 2;
+    return [
+        (0, 0),
+        (0, 2),
+        (0, -2),
+        (1, 0),
+        (-1, 0),
+        (0 + y_mod, 1),
+        (0 + y_mod, -1),
+        (-1 + y_mod, 1),
+        (-1 + y_mod, -1),
+    ];
 }

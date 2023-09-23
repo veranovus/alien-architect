@@ -318,8 +318,8 @@ fn handle_ufo_drop_event(
     mut obj_query: Query<(Entity, &mut Object, &mut Transform), With<Selectable>>,
     mut event_writer: EventWriter<TileStateChangeEvent>,
     mut event_reader: EventReader<UFODropEvent>,
+    mut world: ResMut<World>,
     oas: Res<ObjectAssetServer>,
-    world: Res<World>,
     grid: Res<Grid>,
 ) {
     // Validate ER
@@ -388,9 +388,24 @@ fn handle_ufo_drop_event(
             event_writer.send(TileStateChangeEvent::new(cell, TileState::Default));
         }
 
+        // Set the World data to None for Object's previous position.
+        for cell in &obj.occupied {
+            let index = ((cell.y * grid.size.0 as i32) + cell.x) as usize;
+
+            world.objects[index] = None;
+        }
+
         // Set Object's new position
         obj.occupied = occupied;
 
+        // Set the World data to Some(obj) for the new position
+        for cell in &obj.occupied {
+            let index = ((cell.y * grid.size.0 as i32) + cell.x) as usize;
+
+            world.objects[index] = Some((entity, obj.id));
+        }
+
+        // Set Object's transform to new position
         let world_position = grid.cell_to_world(UVec2::new(target.x as u32, target.y as u32));
         let order = grid.cell_order(UVec2::new(target.x as u32, target.y as u32));
 
