@@ -1,3 +1,5 @@
+use self::warn::SpawnWarningEvent;
+use crate::animation::Animate;
 use crate::object::asset::{ObjectAsset, ObjectAssetServer};
 use crate::object::{self, Object, ObjectSelectEvent, Selectable};
 use crate::render::{RenderLayer, RENDER_LAYER};
@@ -7,11 +9,14 @@ use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
 
+mod warn;
+
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<UFODropEvent>()
+        app.add_plugins(warn::WarningPlugin)
+            .add_event::<UFODropEvent>()
             .add_event::<UFOLiftEvent>()
             .add_systems(Update, (control_ufo, ufo_carry_object))
             .add_systems(PostUpdate, (handle_ufo_lift_event, handle_ufo_drop_event));
@@ -19,10 +24,14 @@ impl Plugin for PlayerPlugin {
 }
 
 /************************************************************
- * - Types
+ * - Consts
  */
 
-const UFO_TEXUTRE_PATH: &str = "ufo.png";
+const UFO_TEXTURE_ATLAS_PATH: &str = "ufo_ss.png";
+
+const UFO_TEXTURE_ATLAS_TILE: (usize, usize) = (20, 15);
+
+const UFO_TEXTURE_ATLAS_SIZE: (usize, usize) = (6, 1);
 
 const UFO_SPRITE_OFFSET: (i32, i32) = (5, 4 + 26);
 
@@ -80,6 +89,7 @@ impl UFO {
         grid: &Grid,
         asset_server: &AssetServer,
         commands: &mut Commands,
+        texture_atlases: &mut Assets<TextureAtlas>,
         events: &mut EventWriter<TileStateChangeEvent>,
     ) -> Entity {
         let world_position: Vec2 =
@@ -87,16 +97,31 @@ impl UFO {
 
         events.send(TileStateChangeEvent::new(position, TileState::Selected));
 
+        let image = asset_server.load(UFO_TEXTURE_ATLAS_PATH);
+
+        let texture_atlas = TextureAtlas::from_grid(
+            image,
+            Vec2::new(
+                UFO_TEXTURE_ATLAS_TILE.0 as f32,
+                UFO_TEXTURE_ATLAS_TILE.1 as f32,
+            ),
+            UFO_TEXTURE_ATLAS_SIZE.0,
+            UFO_TEXTURE_ATLAS_SIZE.1,
+            None,
+            None,
+        );
+
         return commands
             .spawn((
-                SpriteBundle {
+                SpriteSheetBundle {
                     transform: Transform::from_xyz(
                         world_position.x + UFO_SPRITE_OFFSET.0 as f32,
                         world_position.y + UFO_SPRITE_OFFSET.1 as f32,
                         RENDER_LAYER[RenderLayer::UFO as usize] as f32,
                     ),
-                    texture: asset_server.load(UFO_TEXUTRE_PATH),
-                    sprite: Sprite {
+                    texture_atlas: texture_atlases.add(texture_atlas),
+                    sprite: TextureAtlasSprite {
+                        index: 0,
                         anchor: Anchor::BottomLeft,
                         ..Default::default()
                     },
@@ -107,6 +132,11 @@ impl UFO {
                     offset: IVec2::new(UFO_SPRITE_OFFSET.0, UFO_SPRITE_OFFSET.1),
                     selected: None,
                 },
+                Animate::new(
+                    UFO_TEXTURE_ATLAS_SIZE.0 * UFO_TEXTURE_ATLAS_SIZE.1,
+                    0.2,
+                    false,
+                ),
                 Name::new("UFO"),
             ))
             .id();
@@ -262,7 +292,8 @@ fn ufo_carry_object(
 fn handle_ufo_lift_event(
     mut ufo_query: Query<&mut UFO>,
     mut obj_query: Query<(Entity, &Object), With<Selectable>>,
-    mut event_writer: EventWriter<TileStateChangeEvent>,
+    mut warn_event_writer: EventWriter<SpawnWarningEvent>,
+    mut tile_event_writer: EventWriter<TileStateChangeEvent>,
     mut event_reader: EventReader<UFOLiftEvent>,
     oas: Res<ObjectAssetServer>,
     world: Res<World>,
@@ -302,16 +333,20 @@ fn handle_ufo_lift_event(
         }
 
         // Clear the TileState for tile UFO is hovering
-        event_writer.send(TileStateChangeEvent::new(ufo.position, TileState::Default));
+        tile_event_writer.send(TileStateChangeEvent::new(ufo.position, TileState::Default));
 
         // Set TileState to Selected for every valid position
         let valid = object::find_valid_cells(entity, obj.id, event.position, &oas, &world, &grid);
         for cell in valid {
-            event_writer.send(TileStateChangeEvent::new(cell, TileState::Selected));
+            tile_event_writer.send(TileStateChangeEvent::new(cell, TileState::Selected));
         }
 
         ufo.selected = Some(UFOSelection::new(entity, occupy_index as usize));
         break;
+    }
+
+    if ufo.selected.is_none() {
+        warn_event_writer.send(SpawnWarningEvent::new());
     }
 }
 

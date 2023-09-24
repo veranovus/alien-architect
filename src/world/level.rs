@@ -118,6 +118,7 @@ fn handle_load_level_event(
         &grid,
         &asset_server,
         &mut commands,
+        &mut texture_atlases,
         &mut event_writer,
     );
 }

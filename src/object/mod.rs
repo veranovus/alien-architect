@@ -13,8 +13,8 @@ pub struct ObjectPlugin;
 
 impl Plugin for ObjectPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<ObjectSelectEvent>()
-            .add_plugins(asset::AssetPlugin)
+        app.add_plugins(asset::AssetPlugin)
+            .add_event::<ObjectSelectEvent>()
             .add_systems(
                 PostUpdate,
                 (handle_select_object_event, update_object_image),

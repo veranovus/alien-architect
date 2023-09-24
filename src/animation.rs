@@ -51,7 +51,7 @@ fn animate(
     for (entity, mut animate, mut sprite) in &mut query {
         animate.timer.tick(time.delta());
 
-        if animate.timer.finished() {
+        if animate.timer.just_finished() {
             animate.current_frame += 1;
 
             if animate.current_frame >= animate.frame_count {

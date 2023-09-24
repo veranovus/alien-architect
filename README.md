@@ -40,6 +40,8 @@ Super cool puzzle games about managing space and aliens!
 - `v0.2.4`: Implemented movement rules, for every `Object`, except `Villager` and `Cow`.
 - `v0.2.5`: Implemented rest of the movement rules.
 - `v0.2.6`: Implemented animated `Objects`, and `AnimationPlugin`.
+- `v0.2.6`: Implemented an animated version of `UFO`.
+- `v0.2.6`: Implemented `WarningIndicator` for `UFO` to show when player tries to lift an immobile object.
 
 # Update
 - Change `Grid`'s `cell_to_world` function from `u32` to `i32` to account for negative positions.
