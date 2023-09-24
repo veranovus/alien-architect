@@ -2,11 +2,13 @@ use bevy::input::common_conditions::input_toggle_active;
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
+mod animation;
 mod camera;
 mod global;
 mod object;
 mod player;
 mod render;
+mod ui;
 mod world;
 
 fn main() {
@@ -34,7 +36,8 @@ fn main() {
             WorldInspectorPlugin::default().run_if(input_toggle_active(false, KeyCode::Grave)),
         )
         .add_plugins(camera::CameraPlugin)
-        .add_plugins(render::RenderPlugin)
+        .add_plugins(animation::AnimationPlugin)
+        .add_plugins(ui::UIPlugin)
         .add_plugins(world::WorldPlugin)
         .add_plugins(object::ObjectPlugin)
         .add_plugins(player::PlayerPlugin)

@@ -1,5 +1,6 @@
+use crate::animation::Animate;
 use crate::object::asset::ObjectAssetServer;
-use crate::render::RenderLayer;
+use crate::render::{RenderLayer, RENDER_LAYER};
 use crate::world::{grid::Grid, World};
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
@@ -53,15 +54,6 @@ impl Selectable {
     }
 }
 
-#[derive(Debug, Component)]
-pub struct Animated;
-
-impl Animated {
-    pub fn new() -> Self {
-        Self
-    }
-}
-
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Component, Serialize, Deserialize)]
 pub enum ObjectID {
@@ -101,6 +93,7 @@ impl Object {
     pub fn new(
         id: ObjectID,
         position: UVec2,
+        texture_atlases: &mut Assets<TextureAtlas>,
         world: &mut World,
         commands: &mut Commands,
         grid: &Grid,
@@ -128,26 +121,12 @@ impl Object {
         // Create the Object
         let entity = commands
             .spawn((
-                SpriteBundle {
-                    transform: Transform::from_xyz(
-                        world_position.x + asset.conf.offset.x as f32,
-                        world_position.y + asset.conf.offset.y as f32,
-                        0.0,
-                    ),
-                    texture: asset.assets[0].clone(),
-                    sprite: Sprite {
-                        anchor: Anchor::BottomLeft,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
                 Object {
                     id,
                     occupied: occupied.clone(),
                     name: asset.conf.name.clone(),
                     offset: asset.conf.offset,
                 },
-                RenderLayer::Entity(grid.cell_order(position) as usize),
                 Name::new(asset.conf.name.clone()),
             ))
             .id();
@@ -158,8 +137,52 @@ impl Object {
         }
 
         // Give object Animated property
-        if asset.conf.animated {
-            commands.entity(entity).insert(Animated::new());
+        match &asset.conf.animated {
+            Some(desc) => {
+                let texture_atlas = TextureAtlas::from_grid(
+                    asset.assets[0].clone(),
+                    Vec2::new(desc.image_size.0 as f32, desc.image_size.1 as f32),
+                    desc.atlas_size.0,
+                    desc.atlas_size.1,
+                    None,
+                    None,
+                );
+
+                commands.entity(entity).insert((
+                    SpriteSheetBundle {
+                        transform: Transform::from_xyz(
+                            world_position.x + asset.conf.offset.x as f32,
+                            world_position.y + asset.conf.offset.y as f32,
+                            (RENDER_LAYER[RenderLayer::Entity as usize] + grid.cell_order(position))
+                                as f32,
+                        ),
+                        texture_atlas: texture_atlases.add(texture_atlas),
+                        sprite: TextureAtlasSprite {
+                            index: 0,
+                            anchor: Anchor::BottomLeft,
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    },
+                    Animate::new(desc.atlas_size.0 * desc.atlas_size.1, desc.interval, false),
+                ));
+            }
+            None => {
+                commands.entity(entity).insert(SpriteBundle {
+                    transform: Transform::from_xyz(
+                        world_position.x + asset.conf.offset.x as f32,
+                        world_position.y + asset.conf.offset.y as f32,
+                        (RENDER_LAYER[RenderLayer::Entity as usize] + grid.cell_order(position))
+                            as f32,
+                    ),
+                    texture: asset.assets[0].clone(),
+                    sprite: Sprite {
+                        anchor: Anchor::BottomLeft,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                });
+            }
         }
 
         // Add object to world

@@ -55,6 +55,7 @@ fn handle_load_level_event(
     mut event_reader: EventReader<LoadLevelEvent>,
     mut event_writer: EventWriter<TileStateChangeEvent>,
     mut world: ResMut<world::World>,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     tilemap: Query<Entity, With<TileMap>>,
     objects: Query<Entity, With<Object>>,
     ufo: Query<Entity, With<UFO>>,
@@ -103,7 +104,14 @@ fn handle_load_level_event(
 
     world::generate_tiles(&grid, &mut commands);
 
-    world::generate_objects(&level_desc.objects, &grid, &oas, &mut world, &mut commands);
+    world::generate_objects(
+        &level_desc.objects,
+        &grid,
+        &oas,
+        &mut texture_atlases,
+        &mut world,
+        &mut commands,
+    );
 
     UFO::new(
         IVec2::new(1, 6),

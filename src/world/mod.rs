@@ -77,6 +77,7 @@ pub fn generate_objects(
     objects: &Vec<ObjectDesc>,
     grid: &Grid,
     oas: &ObjectAssetServer,
+    texture_atlases: &mut Assets<TextureAtlas>,
     world: &mut World,
     commands: &mut Commands,
 ) {
@@ -105,7 +106,15 @@ pub fn generate_objects(
             }
         }
 
-        Object::new(od.id, od.position, world, commands, grid, oas);
+        Object::new(
+            od.id,
+            od.position,
+            texture_atlases,
+            world,
+            commands,
+            grid,
+            oas,
+        );
     }
 
     if !king | !castle {

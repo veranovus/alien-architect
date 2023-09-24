@@ -1,4 +1,4 @@
-use crate::render::RenderLayer;
+use crate::render::{RenderLayer, RENDER_LAYER};
 use crate::world::grid::Grid;
 use bevy::prelude::*;
 use bevy::sprite::Anchor;
@@ -121,7 +121,12 @@ impl Tile {
                         anchor: Anchor::BottomLeft,
                         ..Default::default()
                     },
-                    transform: Transform::from_xyz(world_position.x, world_position.y, 0.0),
+                    transform: Transform::from_xyz(
+                        world_position.x,
+                        world_position.y,
+                        (RENDER_LAYER[RenderLayer::Tile as usize] + grid.cell_order(position))
+                            as f32,
+                    ),
                     ..Default::default()
                 },
                 Tile {
@@ -131,7 +136,6 @@ impl Tile {
                     state: TileState::Default,
                     r#type: TileType::from(position.y % 2),
                 },
-                RenderLayer::Tile(grid.cell_order(position) as usize),
                 Name::new(format!("Tile #{}", index)),
             ))
             .id();

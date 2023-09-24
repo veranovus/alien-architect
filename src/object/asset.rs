@@ -1,4 +1,4 @@
-use crate::object::ObjectID;
+use crate::{animation::ObjectAnimationDesc, object::ObjectID};
 use bevy::prelude::*;
 use bevy::utils::HashMap;
 use serde::{Deserialize, Serialize};
@@ -26,7 +26,7 @@ pub struct ObjectConf {
     pub id: ObjectID,
     pub name: String,
     pub selectable: bool,
-    pub animated: bool,
+    pub animated: Option<ObjectAnimationDesc>,
     pub occupy: Vec<IVec2>,
     pub offset: IVec2,
     assets: Vec<String>,

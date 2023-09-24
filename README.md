@@ -2,7 +2,7 @@
 
 Super cool puzzle games about managing space and aliens!
 
-> Version 0.2.5
+> Version 0.2.6
 
 ## Credits
 
@@ -39,6 +39,7 @@ Super cool puzzle games about managing space and aliens!
 - `v0.2.3`: Fixed a bug which occured when a Selectable object had less than 2 sprites.
 - `v0.2.4`: Implemented movement rules, for every `Object`, except `Villager` and `Cow`.
 - `v0.2.5`: Implemented rest of the movement rules.
+- `v0.2.6`: Implemented animated `Objects`, and `AnimationPlugin`.
 
 # Update
 - Change `Grid`'s `cell_to_world` function from `u32` to `i32` to account for negative positions.

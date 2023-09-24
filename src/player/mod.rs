@@ -1,5 +1,6 @@
 use crate::object::asset::{ObjectAsset, ObjectAssetServer};
 use crate::object::{self, Object, ObjectSelectEvent, Selectable};
+use crate::render::{RenderLayer, RENDER_LAYER};
 use crate::world::tile::{TileState, TileStateChangeEvent};
 use crate::world::{grid::Grid, World};
 use bevy::ecs::query::QuerySingleError;
@@ -92,7 +93,7 @@ impl UFO {
                     transform: Transform::from_xyz(
                         world_position.x + UFO_SPRITE_OFFSET.0 as f32,
                         world_position.y + UFO_SPRITE_OFFSET.1 as f32,
-                        300.0,
+                        RENDER_LAYER[RenderLayer::UFO as usize] as f32,
                     ),
                     texture: asset_server.load(UFO_TEXUTRE_PATH),
                     sprite: Sprite {
@@ -254,7 +255,7 @@ fn ufo_carry_object(
 
         transform.translation.x = world_position.x + obj.offset.x as f32;
         transform.translation.y = world_position.y + obj.offset.y as f32 + UFO_LIFT_MODIFIER as f32;
-        transform.translation.z = 100.0 + order as f32;
+        transform.translation.z = (RENDER_LAYER[RenderLayer::Entity as usize] + order) as f32;
     }
 }
 
@@ -412,7 +413,7 @@ fn handle_ufo_drop_event(
 
         transform.translation.x = world_position.x + obj.offset.x as f32;
         transform.translation.y = world_position.y + obj.offset.y as f32;
-        transform.translation.z = 100.0 + order as f32;
+        transform.translation.z = (RENDER_LAYER[RenderLayer::Entity as usize] + order) as f32;
 
         // Set UFO's selected to None
         ufo.selected = None;
