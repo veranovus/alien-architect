@@ -2,7 +2,7 @@
 
 Super cool puzzle games about managing space and aliens!
 
-> Version 0.2.6
+> Version 0.2.7
 
 ## Credits
 
@@ -42,6 +42,8 @@ Super cool puzzle games about managing space and aliens!
 - `v0.2.6`: Implemented animated `Objects`, and `AnimationPlugin`.
 - `v0.2.6`: Implemented an animated version of `UFO`.
 - `v0.2.6`: Implemented `WarningIndicator` for `UFO` to show when player tries to lift an immobile object.
+- `v0.2.7`: Implemented `AppState` and scene transitions.
+- `v0.2.7`: Added `Splash` scene.
 
 # Update
 - Change `Grid`'s `cell_to_world` function from `u32` to `i32` to account for negative positions.

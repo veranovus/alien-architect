@@ -20,21 +20,28 @@ pub struct ObjectAnimationDesc {
     pub interval: f32,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum AnimationMode {
+    Default,
+    Loop,
+    Delete,
+}
+
 #[derive(Debug, Component)]
 pub struct Animate {
-    timer: Timer,
-    current_frame: usize,
-    frame_count: usize,
-    delete: bool,
+    pub timer: Timer,
+    pub current_frame: usize,
+    pub frame_count: usize,
+    mode: AnimationMode,
 }
 
 impl Animate {
-    pub fn new(frame_count: usize, interval: f32, delete: bool) -> Self {
+    pub fn new(frame_count: usize, interval: f32, mode: AnimationMode) -> Self {
         Self {
             timer: Timer::from_seconds(interval, TimerMode::Repeating),
             current_frame: 0,
             frame_count,
-            delete,
+            mode,
         }
     }
 }
@@ -55,12 +62,18 @@ fn animate(
             animate.current_frame += 1;
 
             if animate.current_frame >= animate.frame_count {
-                if animate.delete {
-                    commands.entity(entity).despawn_recursive();
-                    break;
+                match animate.mode {
+                    AnimationMode::Default => {
+                        animate.current_frame = animate.frame_count - 1;
+                    }
+                    AnimationMode::Loop => {
+                        animate.current_frame = 0;
+                    }
+                    AnimationMode::Delete => {
+                        commands.entity(entity).despawn_recursive();
+                        continue;
+                    }
                 }
-
-                animate.current_frame = 0;
             }
 
             *sprite = TextureAtlasSprite {

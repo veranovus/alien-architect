@@ -80,7 +80,7 @@ impl Warning {
 }
 
 /************************************************************
- * - Types
+ * - System Functions
  */
 
 fn update_warning_indicator_positions(

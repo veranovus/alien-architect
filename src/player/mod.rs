@@ -1,13 +1,14 @@
 use self::warn::SpawnWarningEvent;
-use crate::animation::Animate;
-use crate::object::asset::{ObjectAsset, ObjectAssetServer};
-use crate::object::{self, Object, ObjectSelectEvent, Selectable};
-use crate::render::{RenderLayer, RENDER_LAYER};
-use crate::world::tile::{TileState, TileStateChangeEvent};
-use crate::world::{grid::Grid, World};
-use bevy::ecs::query::QuerySingleError;
-use bevy::prelude::*;
-use bevy::sprite::Anchor;
+use crate::{
+    animation::{Animate, AnimationMode},
+    object::asset::{ObjectAsset, ObjectAssetServer},
+    object::{self, Object, ObjectSelectEvent, Selectable},
+    render::{RenderLayer, RENDER_LAYER},
+    state::AppState,
+    world::tile::{TileState, TileStateChangeEvent},
+    world::{grid::Grid, World},
+};
+use bevy::{ecs::query::QuerySingleError, prelude::*, sprite::Anchor};
 
 mod warn;
 
@@ -18,8 +19,14 @@ impl Plugin for PlayerPlugin {
         app.add_plugins(warn::WarningPlugin)
             .add_event::<UFODropEvent>()
             .add_event::<UFOLiftEvent>()
-            .add_systems(Update, (control_ufo, ufo_carry_object))
-            .add_systems(PostUpdate, (handle_ufo_lift_event, handle_ufo_drop_event));
+            .add_systems(
+                Update,
+                (control_ufo, ufo_carry_object).run_if(in_state(AppState::Game)),
+            )
+            .add_systems(
+                PostUpdate,
+                (handle_ufo_lift_event, handle_ufo_drop_event).run_if(in_state(AppState::Game)),
+            );
     }
 }
 
@@ -135,7 +142,7 @@ impl UFO {
                 Animate::new(
                     UFO_TEXTURE_ATLAS_SIZE.0 * UFO_TEXTURE_ATLAS_SIZE.1,
                     0.2,
-                    false,
+                    AnimationMode::Default,
                 ),
                 Name::new("UFO"),
             ))

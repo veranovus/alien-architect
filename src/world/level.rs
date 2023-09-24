@@ -1,8 +1,14 @@
-use crate::object::asset::ObjectAssetServer;
-use crate::object::{Object, ObjectDesc};
-use crate::player::UFO;
-use crate::world::tile::{TileMap, TileStateChangeEvent};
-use crate::world::{self, grid::Grid};
+use crate::{
+    object::asset::ObjectAssetServer,
+    object::{Object, ObjectDesc},
+    player::UFO,
+    state::AppState,
+    world::{
+        self,
+        grid::Grid,
+        tile::{TileMap, TileStateChangeEvent},
+    },
+};
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -10,11 +16,17 @@ pub struct LevelPlugin;
 
 impl Plugin for LevelPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<LoadLevelEvent>()
-            .add_systems(PreUpdate, control_load_level)
-            .add_systems(PostUpdate, handle_load_level_event);
+        app.add_systems(PreStartup, setup_level)
+            .add_systems(OnEnter(AppState::Game), load_level)
+            .add_systems(OnExit(AppState::Game), unload_level);
     }
 }
+
+/************************************************************
+ * - Constants
+ */
+
+const LEVEL_PATHS: [&str; 1] = ["assets/scn/test-level.ron"];
 
 /************************************************************
  * - Types
@@ -25,15 +37,18 @@ struct LevelDesc {
     objects: Vec<ObjectDesc>,
 }
 
-#[derive(Debug, Event)]
-pub struct LoadLevelEvent {
-    path: String,
+#[allow(dead_code)]
+#[derive(Debug, Resource)]
+pub struct Level {
+    current: usize,
+    maximum: usize,
 }
 
-impl LoadLevelEvent {
-    pub fn new(path: &str) -> Self {
+impl Level {
+    fn new(current: usize) -> Self {
         Self {
-            path: path.to_string(),
+            current,
+            maximum: LEVEL_PATHS.len(),
         }
     }
 }
@@ -42,65 +57,29 @@ impl LoadLevelEvent {
  * - System Functions
  */
 
-fn control_load_level(mut events: EventWriter<LoadLevelEvent>, keyboard: Res<Input<KeyCode>>) {
-    if !keyboard.just_pressed(KeyCode::R) {
-        return;
-    }
-
-    events.send(LoadLevelEvent::new("assets/scn/test-level.ron"));
+fn setup_level(mut commands: Commands) {
+    commands.insert_resource(Level::new(0));
 }
 
-fn handle_load_level_event(
+fn load_level(
     mut commands: Commands,
-    mut event_reader: EventReader<LoadLevelEvent>,
     mut event_writer: EventWriter<TileStateChangeEvent>,
     mut world: ResMut<world::World>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-    tilemap: Query<Entity, With<TileMap>>,
-    objects: Query<Entity, With<Object>>,
-    ufo: Query<Entity, With<UFO>>,
     oas: Res<ObjectAssetServer>,
     asset_server: Res<AssetServer>,
+    level: Res<Level>,
     grid: Res<Grid>,
 ) {
-    if event_reader.is_empty() {
-        return;
-    }
-
-    let mut path = String::new();
-
-    let mut first = true;
-    for e in event_reader.iter() {
-        if !first {
-            warn!("Encountered unhandled LoadLevelEvent.");
-            continue;
-        }
-
-        path = e.path.to_string();
-
-        first = false;
-    }
-
-    let level_desc: LevelDesc = if let Ok(contents) = std::fs::read_to_string(&path) {
-        ron::from_str(&contents).unwrap()
-    } else {
-        panic!("Failed to load LevelDesc from, `{}`.", path);
-    };
-
-    // De-spawn TileMap
-    for e in &tilemap {
-        commands.entity(e).despawn_recursive();
-    }
-
-    // De-spawn Objects
-    for e in &objects {
-        commands.entity(e).despawn_recursive();
-    }
-
-    // De-spawn UFO
-    for e in &ufo {
-        commands.entity(e).despawn_recursive();
-    }
+    let level_desc: LevelDesc =
+        if let Ok(contents) = std::fs::read_to_string(LEVEL_PATHS[level.current]) {
+            ron::from_str(&contents).unwrap()
+        } else {
+            panic!(
+                "Failed to load LevelDesc from, `{}`.",
+                LEVEL_PATHS[level.current]
+            );
+        };
 
     world::generate_tiles(&grid, &mut commands);
 
@@ -121,4 +100,26 @@ fn handle_load_level_event(
         &mut texture_atlases,
         &mut event_writer,
     );
+}
+
+fn unload_level(
+    mut commands: Commands,
+    tilemap: Query<Entity, With<TileMap>>,
+    objects: Query<Entity, With<Object>>,
+    ufo: Query<Entity, With<UFO>>,
+) {
+    // De-spawn TileMap
+    for e in &tilemap {
+        commands.entity(e).despawn_recursive();
+    }
+
+    // De-spawn Objects
+    for e in &objects {
+        commands.entity(e).despawn_recursive();
+    }
+
+    // De-spawn UFO
+    for e in &ufo {
+        commands.entity(e).despawn_recursive();
+    }
 }

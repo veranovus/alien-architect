@@ -8,6 +8,8 @@ mod global;
 mod object;
 mod player;
 mod render;
+mod scene;
+mod state;
 mod ui;
 mod world;
 
@@ -36,6 +38,8 @@ fn main() {
             WorldInspectorPlugin::default().run_if(input_toggle_active(false, KeyCode::Grave)),
         )
         .add_plugins(camera::CameraPlugin)
+        .add_plugins(state::StatePlugin)
+        .add_plugins(scene::ScenePlugin)
         .add_plugins(animation::AnimationPlugin)
         .add_plugins(ui::UIPlugin)
         .add_plugins(world::WorldPlugin)

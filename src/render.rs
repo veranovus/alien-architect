@@ -2,7 +2,7 @@
  * - Constants
  */
 
-pub const RENDER_LAYER: [u32; 4] = [0, 100, 200, 300];
+pub const RENDER_LAYER: [u32; 5] = [0, 100, 200, 300, 400];
 
 /************************************************************
  * - Types
@@ -14,4 +14,5 @@ pub enum RenderLayer {
     Entity,
     UFO,
     UI,
+    Overlay,
 }

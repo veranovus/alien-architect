@@ -1,9 +1,11 @@
-use crate::animation::Animate;
-use crate::object::asset::ObjectAssetServer;
-use crate::render::{RenderLayer, RENDER_LAYER};
-use crate::world::{grid::Grid, World};
-use bevy::prelude::*;
-use bevy::sprite::Anchor;
+use crate::{
+    animation::{Animate, AnimationMode},
+    object::asset::ObjectAssetServer,
+    render::{RenderLayer, RENDER_LAYER},
+    state::AppState,
+    world::{grid::Grid, World},
+};
+use bevy::{prelude::*, sprite::Anchor};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -17,7 +19,7 @@ impl Plugin for ObjectPlugin {
             .add_event::<ObjectSelectEvent>()
             .add_systems(
                 PostUpdate,
-                (handle_select_object_event, update_object_image),
+                (handle_select_object_event, update_object_image).run_if(in_state(AppState::Game)),
             );
     }
 }
@@ -164,7 +166,11 @@ impl Object {
                         },
                         ..Default::default()
                     },
-                    Animate::new(desc.atlas_size.0 * desc.atlas_size.1, desc.interval, false),
+                    Animate::new(
+                        desc.atlas_size.0 * desc.atlas_size.1,
+                        desc.interval,
+                        AnimationMode::Loop,
+                    ),
                 ));
             }
             None => {
