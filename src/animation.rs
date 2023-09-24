@@ -20,6 +20,7 @@ pub struct ObjectAnimationDesc {
     pub interval: f32,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub enum AnimationMode {
     Default,

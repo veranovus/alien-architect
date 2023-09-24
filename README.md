@@ -44,7 +44,9 @@ Super cool puzzle games about managing space and aliens!
 - `v0.2.6`: Implemented `WarningIndicator` for `UFO` to show when player tries to lift an immobile object.
 - `v0.2.7`: Implemented `AppState` and scene transitions.
 - `v0.2.7`: Added `Splash` scene.
+- `v0.2.7`: Small bug fixes, and quality improvements.
 
 # Update
+
 - Change `Grid`'s `cell_to_world` function from `u32` to `i32` to account for negative positions.
 

@@ -27,7 +27,7 @@ const TRANSITION_TEXTURE_ATLAS_DESCS: [(&str, (usize, usize)); 3] = [
     ("ui/transitions/screen_wipe.png", (14, 1)),
 ];
 
-const TRANSITION_DEFAULT_INTERVAL: f32 = 0.10;
+const TRANSITION_DEFAULT_INTERVAL: f32 = 0.15;
 
 /************************************************************
  * - Types

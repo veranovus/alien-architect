@@ -1,12 +1,10 @@
 use crate::object::asset::ObjectAssetServer;
 use crate::object::{Object, ObjectDesc, ObjectID};
 use crate::world::grid::{Grid, GridPlugin};
-use crate::world::level::LevelPlugin;
 use crate::world::tile::{TileMap, TilePlugin};
 use bevy::prelude::*;
 
 pub mod grid;
-mod level;
 pub mod tile;
 
 pub struct WorldPlugin;
@@ -15,7 +13,6 @@ impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(GridPlugin)
             .add_plugins(TilePlugin)
-            .add_plugins(LevelPlugin)
             .add_systems(Startup, setup_world);
     }
 }

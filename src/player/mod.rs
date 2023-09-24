@@ -142,7 +142,7 @@ impl UFO {
                 Animate::new(
                     UFO_TEXTURE_ATLAS_SIZE.0 * UFO_TEXTURE_ATLAS_SIZE.1,
                     0.2,
-                    AnimationMode::Default,
+                    AnimationMode::Loop,
                 ),
                 Name::new("UFO"),
             ))

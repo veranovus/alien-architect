@@ -1,7 +1,7 @@
+use crate::state::AppState;
 use bevy::prelude::*;
 
-use crate::state::AppState;
-
+pub mod level;
 pub mod splash;
 
 pub struct ScenePlugin;
@@ -9,6 +9,7 @@ pub struct ScenePlugin;
 impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(splash::SplashPlugin)
+            .add_plugins(level::LevelPlugin)
             .add_systems(PostStartup, set_initial_scene);
     }
 }
