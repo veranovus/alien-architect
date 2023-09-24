@@ -309,51 +309,51 @@ pub fn find_valid_cells(
                 }
             }
 
-            let x_mod = castle.x % 2;
-
             for i in 0..grid.size.1 as i32 {
+                // Select the horizontal tiles
                 {
                     let x = (castle.x - (castle.y / 2)) + (i / 2);
 
                     let position = IVec2::new(x, i);
 
                     // Validate current position
-                    let (valid_position, index) = validate_position(position, grid);
+                    let (mut valid_position, index) = validate_position(position, grid);
 
-                    let mut valid_pos = true;
-
-                    if !valid_position {
-                        valid_pos = false;
-                    }
-
-                    match world.objects[index] {
-                        Some((target_entity, _)) => {
-                            if target_entity != entity {
-                                valid_pos = false;
+                    if valid_position {
+                        match world.objects[index] {
+                            Some((target_entity, _)) => {
+                                if target_entity != entity {
+                                    valid_position = false;
+                                }
                             }
+                            None => {}
                         }
-                        None => {}
                     }
 
-                    if valid_pos {
+                    if valid_position {
                         valid.push(position);
                     }
                 }
 
+                // Select the vertical tiles
                 {
-                    let mut x: i32 =
-                        (castle.x - ((grid.size.1 as i32 - castle.y) / 2)) + i as i32 / 2;
-                    let y: i32 =
-                        (grid.size.1 as i32 - castle.x - ((grid.size.1 as i32 - castle.y) / 2))
-                            + i as i32;
+                    let ymod = castle.y % 2;
+
+                    let mut x: i32 = castle.x - ((grid.size.1 as i32 - 1) - castle.y) / 2;
+                    let mut y: i32 = (castle.x * 2) + castle.y + ymod;
 
                     if x < 0 {
                         x = 0;
                     }
+                    if x >= grid.size.0 as i32 {
+                        x = grid.size.0 as i32 - 1;
+                    }
 
-                    let position = IVec2::new(x, y);
+                    if y >= grid.size.1 as i32 {
+                        y = grid.size.1 as i32 - 1;
+                    }
 
-                    println!("POSITION : {}", position);
+                    let position = IVec2::new(x + (i as i32 / 2), y - i as i32);
 
                     // Validate current position
                     let (valid_position, index) = validate_position(position, grid);
@@ -370,8 +370,6 @@ pub fn find_valid_cells(
                         }
                         None => {}
                     }
-
-                    println!("NOT SKIPPED");
 
                     valid.push(position);
                 }
