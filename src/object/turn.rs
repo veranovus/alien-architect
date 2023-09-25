@@ -3,6 +3,7 @@ use crate::{
     object::get_adjected,
     player::win::PlayerWinEvent,
     render::{RenderLayer, RENDER_LAYER},
+    scene::level::Score,
     state::AppState,
     world::{grid::Grid, World},
 };
@@ -50,6 +51,7 @@ fn handle_objects_act_turns_event(
     mut query: Query<(Entity, &mut Object, &mut Transform)>,
     mut event_writer: EventWriter<PlayerWinEvent>,
     mut event_reader: EventReader<ObjectsActTurnsEvent>,
+    mut score: ResMut<Score>,
     mut world: ResMut<World>,
     oas: Res<ObjectAssetServer>,
     grid: Res<Grid>,
@@ -85,6 +87,20 @@ fn handle_objects_act_turns_event(
                 };
             }
             ObjectID::Villager => {
+                let desired = check_if_on_desired_tile(
+                    vec![ObjectID::House, ObjectID::BigHouse],
+                    &object,
+                    &world,
+                );
+
+                if desired {
+                    score.current += 1;
+
+                    delete_queue.push(entity);
+
+                    continue;
+                }
+
                 move_to_random_adjected_tile(
                     entity,
                     &mut object,
@@ -94,6 +110,16 @@ fn handle_objects_act_turns_event(
                 );
             }
             ObjectID::Cow => {
+                let desired = check_if_on_desired_tile(vec![ObjectID::Farm], &object, &world);
+
+                if desired {
+                    score.current += 1;
+
+                    delete_queue.push(entity);
+
+                    continue;
+                }
+
                 move_to_random_adjected_tile(
                     entity,
                     &mut object,
@@ -105,7 +131,13 @@ fn handle_objects_act_turns_event(
             ObjectID::Assassin => {
                 let mut targets = get_entities_to_kill(&mut world, &object, &grid);
 
-                delete_queue.append(&mut targets);
+                for target in targets {
+                    if delete_queue.contains(&target) {
+                        continue;
+                    }
+
+                    delete_queue.push(target);
+                }
             }
             _ => {}
         }
@@ -128,6 +160,28 @@ fn get_diagonal_adjected(position: IVec2) -> [(i32, i32); 4] {
         (-1 + ymod, 1),
         (-1 + ymod, -1),
     ];
+}
+
+fn check_if_on_desired_tile(desired: Vec<ObjectID>, object: &Object, world: &World) -> bool {
+    let position = object.occupied[0];
+    let index = ((position.y * world.size.0 as i32) + position.x) as usize;
+
+    match world.objects[index] {
+        Some((_, id)) => {
+            for target in desired {
+                if target != id {
+                    continue;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+        None => {
+            return false;
+        }
+    };
 }
 
 fn find_path(object: &Object, world: &World, grid: &Grid) -> Option<(Vec<IVec2>, i32)> {

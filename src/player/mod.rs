@@ -5,6 +5,7 @@ use crate::{
     object::{
         asset::{ObjectAsset, ObjectAssetServer},
         turn::ObjectsActTurnsEvent,
+        ObjectID,
     },
     render::{RenderLayer, RENDER_LAYER},
     scene::level::TurnCounter,
@@ -444,6 +445,56 @@ fn handle_ufo_drop_event(
             tile_event_writer.send(TileStateChangeEvent::new(cell, TileState::Default));
         }
 
+        // Check if Object is Cow or Villager
+        let index = ((occupied[0].y * grid.size.0 as i32) + occupied[0].x) as usize;
+
+        let mut self_destruct = false;
+
+        if occupied[0] != obj.occupied[0] {
+            match obj.id {
+                ObjectID::Cow => {
+                    match world.objects[index] {
+                        Some((_, id)) => match id {
+                            ObjectID::Farm => {
+                                self_destruct = true;
+                            }
+                            _ => {
+                                // If position is not valid send a SpawnWarningEvent
+                                warn_event_writer.send(SpawnWarningEvent::new());
+
+                                return;
+                            }
+                        },
+                        None => {}
+                    }
+                }
+                ObjectID::Villager => {
+                    match world.objects[index] {
+                        Some((_, id)) => match id {
+                            ObjectID::House | ObjectID::BigHouse => {
+                                self_destruct = true;
+                            }
+                            _ => {
+                                // If position is not valid send a SpawnWarningEvent
+                                warn_event_writer.send(SpawnWarningEvent::new());
+
+                                return;
+                            }
+                        },
+                        None => {}
+                    }
+                }
+                _ => {
+                    if !world.objects[index].is_none() {
+                        // If position is not valid send a SpawnWarningEvent
+                        warn_event_writer.send(SpawnWarningEvent::new());
+
+                        return;
+                    }
+                }
+            }
+        }
+
         // Set the World data to None for Object's previous position.
         for cell in &obj.occupied {
             let index = ((cell.y * grid.size.0 as i32) + cell.x) as usize;
@@ -460,11 +511,14 @@ fn handle_ufo_drop_event(
         // Set Object's new position
         obj.occupied = occupied;
 
-        // Set the World data to Some(obj) for the new position
-        for cell in &obj.occupied {
-            let index = ((cell.y * grid.size.0 as i32) + cell.x) as usize;
+        // If Object won't detroy itself modify the World data
+        if !self_destruct {
+            // Set the World data to Some(obj) for the new position
+            for cell in &obj.occupied {
+                let index = ((cell.y * grid.size.0 as i32) + cell.x) as usize;
 
-            world.objects[index] = Some((entity, obj.id));
+                world.objects[index] = Some((entity, obj.id));
+            }
         }
 
         // Set Object's transform to new position

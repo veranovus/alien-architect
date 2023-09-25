@@ -2,7 +2,7 @@
 
 Super cool puzzle games about managing space and aliens!
 
-> Version 0.2.9
+> Version 0.3.0
 
 ## Credits
 
@@ -52,6 +52,8 @@ Super cool puzzle games about managing space and aliens!
 - `v0.2.9`: Implemented pathfinding for `ObjectID::King`.
 - `v0.2.9`: Implemented winb condition, and `PlayerWinEvent`.
 - `v0.2.9`: Implemented `WinAnimation`.
+- `v0.3.0`: Fixed some bugs related to validation of Object drop locations.
+- `v0.3.0`: Implementd the system for Villager and Cow's special drop actions.
 
 # Update
 
