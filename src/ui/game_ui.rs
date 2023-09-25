@@ -1,6 +1,7 @@
 use crate::{
     global::window,
     render::{RenderLayer, RENDER_LAYER},
+    scene::level::{Level, Score, TurnCounter},
     state::AppState,
 };
 use bevy::{prelude::*, sprite::Anchor};
@@ -11,8 +12,25 @@ impl Plugin for GameUIPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(PreStartup, setup_ui_number_texture_atlas)
             .add_systems(OnEnter(AppState::Game), load_game_ui)
-            .add_systems(OnExit(AppState::Game), unload_game_ui);
+            .add_systems(OnExit(AppState::Game), unload_game_ui)
+            .add_systems(
+                PostUpdate,
+                (
+                    update_ui_numbers::<UINumberScore, Score>,
+                    update_ui_numbers::<UINumberLevel, Level>,
+                    update_ui_numbers::<UINumberTurn, TurnCounter>,
+                )
+                    .run_if(in_state(AppState::Game)),
+            );
     }
+}
+
+/************************************************************
+ * - Traits
+ */
+
+pub trait GameUINumberValue {
+    fn value(&self) -> usize;
 }
 
 /************************************************************
@@ -47,13 +65,13 @@ struct UINumberTextureAtlas(Handle<TextureAtlas>);
 struct GameUI;
 
 #[derive(Debug, Component)]
-struct UINumberTurn;
-
-#[derive(Debug, Component)]
 struct UINumberScore;
 
 #[derive(Debug, Component)]
 struct UINumberLevel;
+
+#[derive(Debug, Component)]
+struct UINumberTurn;
 
 /************************************************************
  * - System Functions
@@ -77,6 +95,28 @@ fn setup_ui_number_texture_atlas(
     );
 
     commands.insert_resource(UINumberTextureAtlas(texture_atlases.add(texture_atlas)));
+}
+
+fn update_ui_numbers<T: Component, U: Resource + GameUINumberValue>(
+    mut c_query: Query<&mut TextureAtlasSprite>,
+    p_query: Query<&Children, With<T>>,
+    resource: Res<U>,
+) {
+    if !resource.is_changed() {
+        return;
+    }
+
+    for children in &p_query {
+        let nums = format!("{:0width$}", resource.value(), width = 3);
+
+        for (i, child) in children.iter().enumerate() {
+            let mut sprite = c_query.get_mut(*child).unwrap();
+
+            let num = (nums.as_bytes()[i] as char).to_digit(10).unwrap();
+
+            sprite.index = num as usize;
+        }
+    }
 }
 
 fn load_game_ui(

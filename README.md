@@ -45,6 +45,8 @@ Super cool puzzle games about managing space and aliens!
 - `v0.2.7`: Implemented `AppState` and scene transitions.
 - `v0.2.7`: Added `Splash` scene.
 - `v0.2.7`: Small bug fixes, and quality improvements.
+- `v0.2.8`: Implemented `GameUI`.
+- `v0.2.8`: `SpawnWarningEvent` is now send also when player tries to place an object to invalid tile.
 
 # Update
 

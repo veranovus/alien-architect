@@ -3,6 +3,7 @@ use crate::{
     object::{Object, ObjectDesc},
     player::UFO,
     state::AppState,
+    ui::game_ui::GameUINumberValue,
     world::{
         self,
         grid::Grid,
@@ -27,7 +28,6 @@ impl Plugin for LevelPlugin {
  */
 
 const LEVEL_PATHS: [&str; 11] = [
-    "assets/scn/test-level.ron",
     "assets/scn/level_0.ron",
     "assets/scn/level_1.ron",
     "assets/scn/level_2.ron",
@@ -38,6 +38,7 @@ const LEVEL_PATHS: [&str; 11] = [
     "assets/scn/level_7.ron",
     "assets/scn/level_8.ron",
     "assets/scn/level_9.ron",
+    "assets/scn/test-level.ron",
 ];
 
 /************************************************************
@@ -51,7 +52,7 @@ struct LevelDesc {
 
 #[derive(Debug, Resource)]
 pub struct TurnCounter {
-    turn: usize,
+    pub turn: usize,
 }
 
 impl TurnCounter {
@@ -60,10 +61,16 @@ impl TurnCounter {
     }
 }
 
+impl GameUINumberValue for TurnCounter {
+    fn value(&self) -> usize {
+        return self.turn;
+    }
+}
+
 #[derive(Debug, Resource)]
 pub struct Score {
-    previous: usize,
-    current: usize,
+    pub previous: usize,
+    pub current: usize,
 }
 
 impl Score {
@@ -75,19 +82,33 @@ impl Score {
     }
 }
 
+impl GameUINumberValue for Score {
+    fn value(&self) -> usize {
+        return self.current;
+    }
+}
+
 #[allow(dead_code)]
 #[derive(Debug, Resource)]
 pub struct Level {
-    current: usize,
-    maximum: usize,
+    pub current: usize,
+    pub maximum: usize,
 }
 
 impl Level {
     fn new(current: usize) -> Self {
-        Self {
-            current,
-            maximum: LEVEL_PATHS.len(),
+        let maximum = LEVEL_PATHS.len();
+        if current >= maximum {
+            panic!("Supplied invalid Level number at startup.");
         }
+
+        Self { current, maximum }
+    }
+}
+
+impl GameUINumberValue for Level {
+    fn value(&self) -> usize {
+        return self.current;
     }
 }
 
@@ -96,7 +117,7 @@ impl Level {
  */
 
 fn setup_resources(mut commands: Commands) {
-    commands.insert_resource(Level::new(0));
+    commands.insert_resource(Level::new(10));
     commands.insert_resource(Score::new());
     commands.insert_resource(TurnCounter::new());
 }

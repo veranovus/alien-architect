@@ -360,7 +360,8 @@ fn handle_ufo_lift_event(
 fn handle_ufo_drop_event(
     mut ufo_query: Query<&mut UFO>,
     mut obj_query: Query<(Entity, &mut Object, &mut Transform), With<Selectable>>,
-    mut event_writer: EventWriter<TileStateChangeEvent>,
+    mut warn_event_writer: EventWriter<SpawnWarningEvent>,
+    mut tile_event_writer: EventWriter<TileStateChangeEvent>,
     mut event_reader: EventReader<UFODropEvent>,
     mut world: ResMut<World>,
     oas: Res<ObjectAssetServer>,
@@ -419,6 +420,9 @@ fn handle_ufo_drop_event(
         // Validate Object's new position
         for cell in &occupied {
             if !valid.contains(cell) {
+                // If position is not valid send a SpawnWarningEvent
+                warn_event_writer.send(SpawnWarningEvent::new());
+
                 return;
             }
         }
@@ -429,7 +433,7 @@ fn handle_ufo_drop_event(
                 continue;
             }
 
-            event_writer.send(TileStateChangeEvent::new(cell, TileState::Default));
+            tile_event_writer.send(TileStateChangeEvent::new(cell, TileState::Default));
         }
 
         // Set the World data to None for Object's previous position.

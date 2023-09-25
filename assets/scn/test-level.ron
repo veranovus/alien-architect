@@ -16,6 +16,7 @@ LevelDesc(
         (id: BigHouse, position: (1, 5)),
         (id: BigHouse, position: (2, 5)),
         (id: Castle , position: (3, 5)),
+        (id: Field, position: (4, 5)),
         (id: Assassin, position: (2, 6)),
         (id: Cow, position: (0, 7)),
         (id: Tower, position: (2, 7)),
