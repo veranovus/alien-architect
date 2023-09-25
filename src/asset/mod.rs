@@ -1,3 +1,4 @@
+use crate::audio::AudioMode;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -66,3 +67,41 @@ impl TextureAtlasAsset {
         }
     }
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AudioDesc {
+    path: String,
+    mode: AudioMode,
+    volume: f32,
+}
+
+#[derive(Debug)]
+pub struct AudioAsset {
+    handle: Handle<AudioSource>,
+    desc: AudioDesc,
+}
+
+impl AudioAsset {
+    fn new(desc: AudioDesc, asset_server: &AssetServer) -> Self {
+        Self {
+            handle: asset_server.load(&desc.path),
+            desc,
+        }
+    }
+}
+
+#[derive(Debug, Resource)]
+pub struct GameAssetServer {
+}
+
+impl GameAssetServer {
+    fn get(path: &str) -> {
+        
+    }
+}
+
+/************************************************************
+ * - System Functions
+ */
+
+fn load_assets() {}
