@@ -16,7 +16,7 @@ pub struct LevelPlugin;
 
 impl Plugin for LevelPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PreStartup, setup_level)
+        app.add_systems(PreStartup, setup_resources)
             .add_systems(OnEnter(AppState::Game), load_level)
             .add_systems(OnExit(AppState::Game), unload_level);
     }
@@ -26,7 +26,19 @@ impl Plugin for LevelPlugin {
  * - Constants
  */
 
-const LEVEL_PATHS: [&str; 1] = ["assets/scn/test-level.ron"];
+const LEVEL_PATHS: [&str; 11] = [
+    "assets/scn/test-level.ron",
+    "assets/scn/level_0.ron",
+    "assets/scn/level_1.ron",
+    "assets/scn/level_2.ron",
+    "assets/scn/level_3.ron",
+    "assets/scn/level_4.ron",
+    "assets/scn/level_5.ron",
+    "assets/scn/level_6.ron",
+    "assets/scn/level_7.ron",
+    "assets/scn/level_8.ron",
+    "assets/scn/level_9.ron",
+];
 
 /************************************************************
  * - Types
@@ -35,6 +47,32 @@ const LEVEL_PATHS: [&str; 1] = ["assets/scn/test-level.ron"];
 #[derive(Debug, Serialize, Deserialize)]
 struct LevelDesc {
     objects: Vec<ObjectDesc>,
+}
+
+#[derive(Debug, Resource)]
+pub struct TurnCounter {
+    turn: usize,
+}
+
+impl TurnCounter {
+    fn new() -> Self {
+        Self { turn: 0 }
+    }
+}
+
+#[derive(Debug, Resource)]
+pub struct Score {
+    previous: usize,
+    current: usize,
+}
+
+impl Score {
+    fn new() -> Self {
+        Self {
+            previous: 0,
+            current: 0,
+        }
+    }
 }
 
 #[allow(dead_code)]
@@ -57,8 +95,10 @@ impl Level {
  * - System Functions
  */
 
-fn setup_level(mut commands: Commands) {
+fn setup_resources(mut commands: Commands) {
     commands.insert_resource(Level::new(0));
+    commands.insert_resource(Score::new());
+    commands.insert_resource(TurnCounter::new());
 }
 
 fn load_level(
@@ -66,6 +106,8 @@ fn load_level(
     mut event_writer: EventWriter<TileStateChangeEvent>,
     mut world: ResMut<world::World>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    mut turn_counter: ResMut<TurnCounter>,
+    mut score: ResMut<Score>,
     oas: Res<ObjectAssetServer>,
     asset_server: Res<AssetServer>,
     level: Res<Level>,
@@ -80,6 +122,12 @@ fn load_level(
                 LEVEL_PATHS[level.current]
             );
         };
+
+    // Reset TurnCounter
+    turn_counter.turn = 0;
+
+    // Set Score
+    score.previous = score.current;
 
     world::generate_tiles(&grid, &mut commands);
 

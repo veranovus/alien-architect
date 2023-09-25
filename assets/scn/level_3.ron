@@ -1,0 +1,23 @@
+LevelDesc(
+    objects: [
+		(id: Mountain, position: (4, 7)),
+		(id: Mountain, position: (4, 8)),
+		(id: Mountain, position: (1, 8)),
+		(id: Mountain, position: (0, 7)),
+		(id: Mountain, position: (4, 1)),
+		(id: Mountain, position: (4, 0)),
+		(id: Mountain, position: (0, 1)),
+		(id: Mountain, position: (1, 0)),
+		(id: Field, position: (3, 7)),
+		(id: Field, position: (4, 3)),
+		(id: Field, position: (3, 3)),
+		(id: Cow, position: (4, 6)),
+		(id: Tower, position: (3, 1)),
+		(id: Tower, position: (0, 5)),
+		(id: King, position: (4, 2)),
+		(id: House, position: (3, 2)),
+		(id: Farm, position: (4, 4)),
+		(id: Castle, position: (1, 6)),
+		(id: Assassin, position: (2, 5)),
+    ],
+)
