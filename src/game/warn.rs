@@ -1,4 +1,4 @@
-use super::{control_ufo, UFO, UFO_TEXTURE_ATLAS_TILE};
+use super::ufo::{control_ufo, UFO, UFO_TEXTURE_ATLAS_TILE};
 use crate::render::{RenderLayer, RENDER_LAYER};
 use bevy::ecs::query::QuerySingleError;
 use bevy::prelude::*;

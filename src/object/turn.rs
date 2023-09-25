@@ -1,7 +1,7 @@
 use super::{asset::ObjectAssetServer, validate_position, Object, ObjectID};
 use crate::{
+    game::{win::PlayerWinEvent, GameState},
     object::get_adjected,
-    player::{win::PlayerWinEvent, GameState},
     render::{RenderLayer, RENDER_LAYER},
     scene::level::Score,
     state::AppState,
@@ -17,7 +17,7 @@ impl Plugin for TurnPlugin {
         app.add_event::<ObjectsActTurnsEvent>().add_systems(
             PostUpdate,
             handle_objects_act_turns_event
-                .run_if(in_state(AppState::Game).and_then(in_state(GameState::Active))),
+                .run_if(in_state(AppState::Game).and_then(in_state(GameState::ObjectControlled))),
         );
     }
 }

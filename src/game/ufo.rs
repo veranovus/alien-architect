@@ -1,6 +1,6 @@
-use self::warn::SpawnWarningEvent;
 use crate::{
     animation::{Animate, AnimationMode},
+    game::warn::SpawnWarningEvent,
     object::{self, Object, ObjectSelectEvent, Selectable},
     object::{
         asset::{ObjectAsset, ObjectAssetServer},
@@ -10,29 +10,29 @@ use crate::{
     },
     render::{RenderLayer, RENDER_LAYER},
     scene::level::{Score, TurnCounter},
-    state::{AppState, SceneTransitionEffect, SceneTransitionEvent},
+    state::{
+        transition::{SceneTransitionEvent, TransitionEffect},
+        AppState,
+    },
     world::tile::{TileState, TileStateChangeEvent},
     world::{grid::Grid, World},
 };
 use bevy::{ecs::query::QuerySingleError, prelude::*, sprite::Anchor};
 
-mod warn;
-pub mod win;
+use super::GameState;
 
-pub struct PlayerPlugin;
+pub struct UFOPlugin;
 
-impl Plugin for PlayerPlugin {
+impl Plugin for UFOPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(warn::WarningPlugin)
-            .add_plugins(win::WinPlugin)
-            .add_state::<GameState>()
-            .add_event::<UFODropEvent>()
+        app.add_event::<UFODropEvent>()
             .add_event::<UFOLiftEvent>()
             .add_event::<UFOCancelEvent>()
             .add_systems(
                 Update,
-                (control_ufo, ufo_carry_object)
-                    .run_if(in_state(AppState::Game).and_then(in_state(GameState::Active))),
+                (control_ufo, ufo_carry_object).run_if(
+                    in_state(AppState::Game).and_then(in_state(GameState::PlayerControlled)),
+                ),
             )
             .add_systems(
                 PostUpdate,
@@ -41,7 +41,9 @@ impl Plugin for PlayerPlugin {
                     handle_ufo_cancel_event,
                     handle_ufo_drop_event,
                 )
-                    .run_if(in_state(AppState::Game).and_then(in_state(GameState::Active))),
+                    .run_if(
+                        in_state(AppState::Game).and_then(in_state(GameState::PlayerControlled)),
+                    ),
             );
     }
 }
@@ -52,7 +54,7 @@ impl Plugin for PlayerPlugin {
 
 const UFO_TEXTURE_ATLAS_PATH: &str = "ufo_ss.png";
 
-const UFO_TEXTURE_ATLAS_TILE: (usize, usize) = (20, 15);
+pub const UFO_TEXTURE_ATLAS_TILE: (usize, usize) = (20, 15);
 
 const UFO_TEXTURE_ATLAS_SIZE: (usize, usize) = (6, 1);
 
@@ -63,13 +65,6 @@ const UFO_LIFT_MODIFIER: i32 = 8;
 /************************************************************
  * - Types
  */
-
-#[derive(States, PartialEq, Eq, Debug, Clone, Copy, Hash, Default)]
-pub enum GameState {
-    #[default]
-    Active,
-    Paused,
-}
 
 #[derive(Debug)]
 struct UFOSelection {
@@ -186,7 +181,7 @@ impl UFO {
  * - System Functions
  */
 
-fn control_ufo(
+pub fn control_ufo(
     mut ufo_query: Query<(&mut UFO, &mut Transform)>,
     mut tile_event_writer: EventWriter<TileStateChangeEvent>,
     mut objc_event_writer: EventWriter<ObjectSelectEvent>,
@@ -262,7 +257,7 @@ fn control_ufo(
     // Restart
     if keys.just_pressed(KeyCode::Return) {
         trns_event_writer.send(SceneTransitionEvent::new(
-            SceneTransitionEffect::Wipe,
+            TransitionEffect::Wipe,
             AppState::Game,
         ));
 

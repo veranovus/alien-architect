@@ -1,7 +1,6 @@
 use crate::{
     animation::{Animate, AnimationMode},
     object::asset::ObjectAssetServer,
-    player::GameState,
     render::{RenderLayer, RENDER_LAYER},
     state::AppState,
     world::{grid::Grid, World},
@@ -22,8 +21,7 @@ impl Plugin for ObjectPlugin {
             .add_event::<ObjectSelectEvent>()
             .add_systems(
                 PostUpdate,
-                (handle_select_object_event, update_object_image)
-                    .run_if(in_state(AppState::Game).and_then(in_state(GameState::Active))),
+                (handle_select_object_event, update_object_image).run_if(in_state(AppState::Game)),
             );
     }
 }
@@ -552,7 +550,7 @@ fn count_neighbour_id(
         // Check the adjacted cells for current cell
         let adjected = get_adjected(current);
         for (x, y) in adjected {
-            let target = IVec2::new(position.x + x, position.y + y);
+            let target = IVec2::new(current.x + x, current.y + y);
 
             // Validate the current position
             let (valid, index) = validate_position(target, grid);

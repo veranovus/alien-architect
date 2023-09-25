@@ -1,7 +1,7 @@
 use crate::{
+    game::{ufo::UFO, GameState},
     object::asset::ObjectAssetServer,
     object::{Object, ObjectDesc},
-    player::{GameState, UFO},
     state::AppState,
     ui::game_ui::GameUINumberValue,
     world::{
@@ -26,7 +26,6 @@ impl Plugin for LevelPlugin {
 /************************************************************
  * - Constants
  */
-
 const LEVEL_PATHS: [&str; 10] = [
     "assets/scn/level_0.ron",
     "assets/scn/level_1.ron",
@@ -123,11 +122,10 @@ impl GameUINumberValue for Level {
 }
 
 /************************************************************
- * - System Functions
- */
+ * - System Functions */
 
 fn setup_resources(mut commands: Commands) {
-    commands.insert_resource(Level::new(9));
+    commands.insert_resource(Level::new(5));
     commands.insert_resource(Score::new());
     commands.insert_resource(TurnCounter::new());
 }
@@ -156,7 +154,7 @@ fn load_level(
         };
 
     // Set GameState to active
-    game_state.set(GameState::Active);
+    game_state.set(GameState::PlayerControlled);
 
     // Reset TurnCounter
     turn_counter.turn = 0;

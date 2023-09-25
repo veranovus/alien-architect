@@ -3,10 +3,12 @@ use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 mod animation;
+mod asset;
+mod audio;
 mod camera;
+mod game;
 mod global;
 mod object;
-mod player;
 mod render;
 mod scene;
 mod state;
@@ -38,12 +40,14 @@ fn main() {
             WorldInspectorPlugin::default().run_if(input_toggle_active(false, KeyCode::Grave)),
         )
         .add_plugins(camera::CameraPlugin)
+        .add_plugins(asset::AssetPlugin)
         .add_plugins(state::StatePlugin)
-        .add_plugins(scene::ScenePlugin)
         .add_plugins(animation::AnimationPlugin)
+        .add_plugins(audio::AudioPlugin)
+        .add_plugins(scene::ScenePlugin)
         .add_plugins(ui::UIPlugin)
         .add_plugins(world::WorldPlugin)
+        .add_plugins(game::GamePlugin)
         .add_plugins(object::ObjectPlugin)
-        .add_plugins(player::PlayerPlugin)
         .run();
 }

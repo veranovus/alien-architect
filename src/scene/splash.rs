@@ -2,8 +2,8 @@ use crate::{
     animation::{Animate, AnimationMode},
     global::window,
     render::{RenderLayer, RENDER_LAYER},
+    state::transition::{SceneTransitionEvent, TransitionEffect},
     state::AppState,
-    state::{SceneTransitionEffect, SceneTransitionEvent},
 };
 use bevy::{ecs::query::QuerySingleError, prelude::*};
 
@@ -75,7 +75,7 @@ fn update_splash_animation(
 
     if splash.timer.just_finished() {
         event_writer.send(SceneTransitionEvent::new(
-            SceneTransitionEffect::WhiteFade,
+            TransitionEffect::WhiteFade,
             AppState::Game,
         ));
     }

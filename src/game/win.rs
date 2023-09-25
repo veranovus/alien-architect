@@ -2,7 +2,10 @@ use crate::{
     global::window,
     render::{RenderLayer, RENDER_LAYER},
     scene::level::{Level, Score, TurnCounter},
-    state::{AppState, SceneTransitionEffect, SceneTransitionEvent},
+    state::{
+        transition::{SceneTransitionEvent, TransitionEffect},
+        AppState,
+    },
     world::tile::{TileState, TileStateChangeEvent},
 };
 use bevy::{ecs::query::QuerySingleError, prelude::*, sprite::Anchor};
@@ -132,7 +135,7 @@ fn update_win_animation(
 
     if wa.trns_timer.just_finished() {
         trns_event_writer.send(SceneTransitionEvent::new(
-            SceneTransitionEffect::Fade,
+            TransitionEffect::Fade,
             level.next(),
         ));
     }
