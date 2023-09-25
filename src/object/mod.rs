@@ -10,12 +10,14 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 pub mod asset;
+pub mod turn;
 
 pub struct ObjectPlugin;
 
 impl Plugin for ObjectPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(asset::AssetPlugin)
+            .add_plugins(turn::TurnPlugin)
             .add_event::<ObjectSelectEvent>()
             .add_systems(
                 PostUpdate,

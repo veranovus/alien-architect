@@ -104,6 +104,17 @@ impl Level {
 
         Self { current, maximum }
     }
+
+    pub fn next(&mut self) -> AppState {
+        self.current += 1;
+        if self.current >= self.maximum {
+            self.current = self.maximum - 1;
+
+            return AppState::Splash;
+        }
+
+        return AppState::Game;
+    }
 }
 
 impl GameUINumberValue for Level {
@@ -117,7 +128,7 @@ impl GameUINumberValue for Level {
  */
 
 fn setup_resources(mut commands: Commands) {
-    commands.insert_resource(Level::new(10));
+    commands.insert_resource(Level::new(0));
     commands.insert_resource(Score::new());
     commands.insert_resource(TurnCounter::new());
 }

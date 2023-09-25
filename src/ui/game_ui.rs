@@ -16,6 +16,9 @@ impl Plugin for GameUIPlugin {
             .add_systems(
                 PostUpdate,
                 (
+                    setup_ui_numbers::<UINumberScore, Score>,
+                    setup_ui_numbers::<UINumberLevel, Level>,
+                    setup_ui_numbers::<UINumberTurn, TurnCounter>,
                     update_ui_numbers::<UINumberScore, Score>,
                     update_ui_numbers::<UINumberLevel, Level>,
                     update_ui_numbers::<UINumberTurn, TurnCounter>,
@@ -97,7 +100,25 @@ fn setup_ui_number_texture_atlas(
     commands.insert_resource(UINumberTextureAtlas(texture_atlases.add(texture_atlas)));
 }
 
-fn update_ui_numbers<T: Component, U: Resource + GameUINumberValue>(
+fn setup_ui_numbers<T: Component, U: Resource + GameUINumberValue + std::fmt::Debug>(
+    mut c_query: Query<&mut TextureAtlasSprite>,
+    p_query: Query<&Children, Added<T>>,
+    resource: Res<U>,
+) {
+    for children in &p_query {
+        let nums = format!("{:0width$}", resource.value(), width = 3);
+
+        for (i, child) in children.iter().enumerate() {
+            let mut sprite = c_query.get_mut(*child).unwrap();
+
+            let num = (nums.as_bytes()[i] as char).to_digit(10).unwrap();
+
+            sprite.index = num as usize;
+        }
+    }
+}
+
+fn update_ui_numbers<T: Component, U: Resource + GameUINumberValue + std::fmt::Debug>(
     mut c_query: Query<&mut TextureAtlasSprite>,
     p_query: Query<&Children, With<T>>,
     resource: Res<U>,

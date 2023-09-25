@@ -2,7 +2,7 @@
 
 Super cool puzzle games about managing space and aliens!
 
-> Version 0.2.8
+> Version 0.2.9
 
 ## Credits
 
@@ -47,6 +47,11 @@ Super cool puzzle games about managing space and aliens!
 - `v0.2.7`: Small bug fixes, and quality improvements.
 - `v0.2.8`: Implemented `GameUI`.
 - `v0.2.8`: `SpawnWarningEvent` is now send also when player tries to place an object to invalid tile.
+- `v0.2.9`: Fixed some bugs related to `GameUI`.
+- `v0.2.9`: Implemented `ObjectsActTurnsEvent` and some `Object`'s now perform actions at the end of their turns.
+- `v0.2.9`: Implemented pathfinding for `ObjectID::King`.
+- `v0.2.9`: Implemented winb condition, and `PlayerWinEvent`.
+- `v0.2.9`: Implemented `WinAnimation`.
 
 # Update
 

@@ -1,9 +1,13 @@
 use self::warn::SpawnWarningEvent;
 use crate::{
     animation::{Animate, AnimationMode},
-    object::asset::{ObjectAsset, ObjectAssetServer},
     object::{self, Object, ObjectSelectEvent, Selectable},
+    object::{
+        asset::{ObjectAsset, ObjectAssetServer},
+        turn::ObjectsActTurnsEvent,
+    },
     render::{RenderLayer, RENDER_LAYER},
+    scene::level::TurnCounter,
     state::AppState,
     world::tile::{TileState, TileStateChangeEvent},
     world::{grid::Grid, World},
@@ -11,12 +15,14 @@ use crate::{
 use bevy::{ecs::query::QuerySingleError, prelude::*, sprite::Anchor};
 
 mod warn;
+pub mod win;
 
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(warn::WarningPlugin)
+            .add_plugins(win::WinPlugin)
             .add_event::<UFODropEvent>()
             .add_event::<UFOLiftEvent>()
             .add_systems(
@@ -31,7 +37,7 @@ impl Plugin for PlayerPlugin {
 }
 
 /************************************************************
- * - Consts
+ * - Constants
  */
 
 const UFO_TEXTURE_ATLAS_PATH: &str = "ufo_ss.png";
@@ -360,10 +366,12 @@ fn handle_ufo_lift_event(
 fn handle_ufo_drop_event(
     mut ufo_query: Query<&mut UFO>,
     mut obj_query: Query<(Entity, &mut Object, &mut Transform), With<Selectable>>,
+    mut turn_event_writer: EventWriter<ObjectsActTurnsEvent>,
     mut warn_event_writer: EventWriter<SpawnWarningEvent>,
     mut tile_event_writer: EventWriter<TileStateChangeEvent>,
     mut event_reader: EventReader<UFODropEvent>,
     mut world: ResMut<World>,
+    mut turn_counter: ResMut<TurnCounter>,
     oas: Res<ObjectAssetServer>,
     grid: Res<Grid>,
 ) {
@@ -442,6 +450,12 @@ fn handle_ufo_drop_event(
 
             world.objects[index] = None;
         }
+
+        // Increment the TurnCounter
+        turn_counter.turn += 1;
+
+        // Send an event to end the current turn
+        turn_event_writer.send(ObjectsActTurnsEvent::new());
 
         // Set Object's new position
         obj.occupied = occupied;
