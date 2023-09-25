@@ -1,5 +1,7 @@
 target/
 .idea/
+.cargo/
+.vscode/
 
 *.DS_Store
 

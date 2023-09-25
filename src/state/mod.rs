@@ -52,6 +52,7 @@ pub enum AppState {
     Title,
     Credits,
     Game,
+    End,
     Transition,
 }
 

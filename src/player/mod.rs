@@ -4,12 +4,13 @@ use crate::{
     object::{self, Object, ObjectSelectEvent, Selectable},
     object::{
         asset::{ObjectAsset, ObjectAssetServer},
+        find_valid_cells,
         turn::ObjectsActTurnsEvent,
         ObjectID,
     },
     render::{RenderLayer, RENDER_LAYER},
-    scene::level::TurnCounter,
-    state::AppState,
+    scene::level::{Score, TurnCounter},
+    state::{AppState, SceneTransitionEffect, SceneTransitionEvent},
     world::tile::{TileState, TileStateChangeEvent},
     world::{grid::Grid, World},
 };
@@ -24,15 +25,23 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(warn::WarningPlugin)
             .add_plugins(win::WinPlugin)
+            .add_state::<GameState>()
             .add_event::<UFODropEvent>()
             .add_event::<UFOLiftEvent>()
+            .add_event::<UFOCancelEvent>()
             .add_systems(
                 Update,
-                (control_ufo, ufo_carry_object).run_if(in_state(AppState::Game)),
+                (control_ufo, ufo_carry_object)
+                    .run_if(in_state(AppState::Game).and_then(in_state(GameState::Active))),
             )
             .add_systems(
                 PostUpdate,
-                (handle_ufo_lift_event, handle_ufo_drop_event).run_if(in_state(AppState::Game)),
+                (
+                    handle_ufo_lift_event,
+                    handle_ufo_cancel_event,
+                    handle_ufo_drop_event,
+                )
+                    .run_if(in_state(AppState::Game).and_then(in_state(GameState::Active))),
             );
     }
 }
@@ -54,6 +63,13 @@ const UFO_LIFT_MODIFIER: i32 = 8;
 /************************************************************
  * - Types
  */
+
+#[derive(States, PartialEq, Eq, Debug, Clone, Copy, Hash, Default)]
+pub enum GameState {
+    #[default]
+    Active,
+    Paused,
+}
 
 #[derive(Debug)]
 struct UFOSelection {
@@ -82,11 +98,20 @@ impl UFOLiftEvent {
 }
 
 #[derive(Debug, Event)]
-pub struct UFODropEvent {}
+pub struct UFODropEvent;
 
 impl UFODropEvent {
     pub fn new() -> Self {
-        Self {}
+        Self
+    }
+}
+
+#[derive(Debug, Event)]
+pub struct UFOCancelEvent;
+
+impl UFOCancelEvent {
+    pub fn new() -> Self {
+        Self
     }
 }
 
@@ -167,6 +192,10 @@ fn control_ufo(
     mut objc_event_writer: EventWriter<ObjectSelectEvent>,
     mut lift_event_writer: EventWriter<UFOLiftEvent>,
     mut drop_event_writer: EventWriter<UFODropEvent>,
+    mut canc_event_writer: EventWriter<UFOCancelEvent>,
+    mut trns_event_writer: EventWriter<SceneTransitionEvent>,
+    mut game_state: ResMut<NextState<GameState>>,
+    mut score: ResMut<Score>,
     grid: Res<Grid>,
     keys: Res<Input<KeyCode>>,
 ) {
@@ -221,6 +250,26 @@ fn control_ufo(
         } else {
             drop_event_writer.send(UFODropEvent::new());
         }
+    }
+
+    // Cancel
+    if keys.just_pressed(KeyCode::J) {
+        if !ufo.selected.is_none() {
+            canc_event_writer.send(UFOCancelEvent::new());
+        }
+    }
+
+    // Restart
+    if keys.just_pressed(KeyCode::Return) {
+        trns_event_writer.send(SceneTransitionEvent::new(
+            SceneTransitionEffect::Wipe,
+            AppState::Game,
+        ));
+
+        game_state.set(GameState::Paused);
+
+        score.current = score.previous;
+        return;
     }
 
     if moved {
@@ -361,6 +410,70 @@ fn handle_ufo_lift_event(
 
     if ufo.selected.is_none() {
         warn_event_writer.send(SpawnWarningEvent::new());
+    }
+}
+
+fn handle_ufo_cancel_event(
+    mut ufo_query: Query<&mut UFO>,
+    mut obj_query: Query<(Entity, &Object, &mut Transform), With<Selectable>>,
+    mut event_writer: EventWriter<TileStateChangeEvent>,
+    mut event_reader: EventReader<UFOCancelEvent>,
+    oas: Res<ObjectAssetServer>,
+    world: Res<World>,
+    grid: Res<Grid>,
+) {
+    // Validate ER
+    if event_reader.len() > 1 {
+        panic!("Encountered unhandled UFOLiftEvent.");
+    }
+    if event_reader.is_empty() {
+        return;
+    }
+
+    event_reader.clear();
+
+    // Get UFO
+    let mut ufo = match ufo_query.get_single_mut() {
+        Ok(tuple) => tuple,
+        Err(QuerySingleError::MultipleEntities(_)) => {
+            panic!("Multiple UFOs are present in the scene.")
+        }
+        Err(QuerySingleError::NoEntities(_)) => return,
+    };
+
+    let selection = match &ufo.selected {
+        Some(selection) => selection,
+        None => panic!("UFO haven't selected any object but, UFODropEvent is called."),
+    };
+
+    // Loop trough every object and reposition the selected one
+    for (entity, object, mut transform) in &mut obj_query {
+        if entity != selection.entity {
+            continue;
+        }
+
+        let position = object.occupied[0];
+
+        // Change tile states
+        let valid = find_valid_cells(entity, object.id, position, &oas, &world, &grid);
+        for cell in valid {
+            if cell == ufo.position {
+                continue;
+            }
+
+            event_writer.send(TileStateChangeEvent::new(cell, TileState::Default));
+        }
+
+        let world_position = grid.cell_to_world(UVec2::new(position.x as u32, position.y as u32));
+        let order = grid.cell_order(UVec2::new(position.x as u32, position.y as u32));
+
+        transform.translation.x = world_position.x + object.offset.x as f32;
+        transform.translation.y = world_position.y + object.offset.y as f32;
+        transform.translation.z = (RENDER_LAYER[RenderLayer::Entity as usize] + order) as f32;
+
+        ufo.selected = None;
+
+        break;
     }
 }
 

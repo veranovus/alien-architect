@@ -2,7 +2,7 @@
 
 Super cool puzzle games about managing space and aliens!
 
-> Version 0.3.0
+> Version 0.3.1
 
 ## Credits
 
@@ -54,6 +54,9 @@ Super cool puzzle games about managing space and aliens!
 - `v0.2.9`: Implemented `WinAnimation`.
 - `v0.3.0`: Fixed some bugs related to validation of Object drop locations.
 - `v0.3.0`: Implementd the system for Villager and Cow's special drop actions.
+- `v0.3.1`: Implemented `EndScreen`.
+- `v0.3.1`: Implemented `UFOCancalEvent` and set up the `Cancel` button.
+- `v0.3.1`: Impelemnted `Restart` button, and temporary introduced new state `GameState`.
 
 # Update
 

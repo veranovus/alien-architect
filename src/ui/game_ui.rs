@@ -1,5 +1,6 @@
 use crate::{
     global::window,
+    player::GameState,
     render::{RenderLayer, RENDER_LAYER},
     scene::level::{Level, Score, TurnCounter},
     state::AppState,
@@ -23,7 +24,7 @@ impl Plugin for GameUIPlugin {
                     update_ui_numbers::<UINumberLevel, Level>,
                     update_ui_numbers::<UINumberTurn, TurnCounter>,
                 )
-                    .run_if(in_state(AppState::Game)),
+                    .run_if(in_state(AppState::Game).and_then(in_state(GameState::Active))),
             );
     }
 }

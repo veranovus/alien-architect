@@ -1,7 +1,7 @@
 use crate::{
     object::asset::ObjectAssetServer,
     object::{Object, ObjectDesc},
-    player::UFO,
+    player::{GameState, UFO},
     state::AppState,
     ui::game_ui::GameUINumberValue,
     world::{
@@ -27,7 +27,7 @@ impl Plugin for LevelPlugin {
  * - Constants
  */
 
-const LEVEL_PATHS: [&str; 11] = [
+const LEVEL_PATHS: [&str; 10] = [
     "assets/scn/level_0.ron",
     "assets/scn/level_1.ron",
     "assets/scn/level_2.ron",
@@ -38,7 +38,6 @@ const LEVEL_PATHS: [&str; 11] = [
     "assets/scn/level_7.ron",
     "assets/scn/level_8.ron",
     "assets/scn/level_9.ron",
-    "assets/scn/test-level.ron",
 ];
 
 /************************************************************
@@ -110,7 +109,7 @@ impl Level {
         if self.current >= self.maximum {
             self.current = self.maximum - 1;
 
-            return AppState::Splash;
+            return AppState::End;
         }
 
         return AppState::Game;
@@ -128,7 +127,7 @@ impl GameUINumberValue for Level {
  */
 
 fn setup_resources(mut commands: Commands) {
-    commands.insert_resource(Level::new(0));
+    commands.insert_resource(Level::new(9));
     commands.insert_resource(Score::new());
     commands.insert_resource(TurnCounter::new());
 }
@@ -140,6 +139,7 @@ fn load_level(
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut turn_counter: ResMut<TurnCounter>,
     mut score: ResMut<Score>,
+    mut game_state: ResMut<NextState<GameState>>,
     oas: Res<ObjectAssetServer>,
     asset_server: Res<AssetServer>,
     level: Res<Level>,
@@ -154,6 +154,9 @@ fn load_level(
                 LEVEL_PATHS[level.current]
             );
         };
+
+    // Set GameState to active
+    game_state.set(GameState::Active);
 
     // Reset TurnCounter
     turn_counter.turn = 0;
